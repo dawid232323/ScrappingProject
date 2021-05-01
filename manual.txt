@@ -1,0 +1,9 @@
+1. Po instalacji Pythona w terminalu wpisujemy komendy:
+pip3 install litex.regon
+pip3 install lxml
+pip3 install pandas
+pip3 install xlsxwriter
+
+2. Plik ze skryptem "api.py" przenosimy do jakiegoś folderu, w którym chcemy aby znalazły się pliki wynikowe.W terminalu zmieniamy katalog roboczy, na ten, w którym znajduje się plik ze skryptem używając komendy "cd" np. cd Documents/Regon. Tab auto-uzupełnia składnię. Skrypt uruchamiamy poleceniem python3 api.py
+
+3. Program poprosi o podanie wymaganych parametrów. NAJWAŻNIEJSZE żeby regony i typy firm znalazły się w pojedynczym pliku tekstowym, gdzie pierwszą kolumną są typy firm (P/F), druga kolumna to numery regon. Kolumny powinny być oddzielone spacjami. Domyślne nazwy plików to: input - "regons.txt" i output - "raport_output.xlsx"
