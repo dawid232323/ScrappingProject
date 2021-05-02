@@ -75,6 +75,14 @@ class Result_Arrays:
         self.make_spreedsheet(self.pkd_F_result, 'pkd_F%d.xlsx'%num)
         self.make_spreedsheet(self.pkd_LF_result, 'pkd_LF%d.xlsx'%num)
         self.make_spreedsheet(self.pkd_LP_result, 'pkd_LP%d.xlsx'%num)
+        self.common_F_result.clear()
+        self.common_LF_result.clear()
+        self.common_LP_result.clear()
+        self.common_P_result.clear()
+        self.pkd_F_result.clear()
+        self.pkd_LF_result.clear()
+        self.pkd_LP_result.clear()
+        self.pkd_P_result.clear()
 
     def raport_type(self, argument, api):
         if argument[2] == 'P':
@@ -104,7 +112,7 @@ class Result_Arrays:
                     # self.data_frame.drop(i, axis=0, inplace=True)
                     # self.data_frame.to_csv('regony.csv', index=False, sep=';')
                     counter += 1  
-                    print('Done ', self.data_frame.iloc[i][3])
+                    print('Done ', self.data_frame.iloc[i][0] ,self.data_frame.iloc[i][3])
                 except Exception as e:
                     print('first if ', e)
                     counter += 1  
