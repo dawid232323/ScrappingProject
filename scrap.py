@@ -158,7 +158,7 @@ def main():
                 del(rows)
                 check_status(driver, mode)
             else:
-                print("Waiting")
+                
                 time.sleep(1)
             
         except KeyboardInterrupt:
