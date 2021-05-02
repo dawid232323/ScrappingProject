@@ -130,7 +130,7 @@ class Result_Arrays:
                     api.login('c5edf702474f47e78ad5')
                 except:
                     print('api ', Exception)
-
+        self.emergency_break(num)
 
 if __name__ == '__main__':
     files = file_handler('regony.csv')
