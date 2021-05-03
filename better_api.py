@@ -106,7 +106,7 @@ class Result_Arrays:
         api = REGONAPI('https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc')
         api.login('c5edf702474f47e78ad5')
         for i in range(len(self.data_frame)):
-            if counter < 50:
+            if counter < 2500:
                 try:
                     self.raport_type(self.data_frame.iloc[i], api)
                     # self.data_frame.drop(i, axis=0, inplace=True)
