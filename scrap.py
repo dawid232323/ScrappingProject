@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import StaleElementReferenceException, NoSuchWindowException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchWindowException, NoAlertPresentException
 import sys
 import time
 import pandas as pd 
@@ -13,7 +13,19 @@ from pynput.mouse import Controller as mouseController
 from pynput.keyboard import Controller as keyController 
 import pyautogui
 
+def file_to_write():
+    fhand = open("exceptions.txt", 'a')
+    return fhand
 
+
+
+
+def write_exception(driver, fhand):
+    street = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[9]').text
+    element = driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
+    result = element.split('/')
+    line = street + " strona: " + result[0] + '\n'
+    fhand.write(line)
 
 def empty_page(driver):
     try:
@@ -138,6 +150,7 @@ def count_rows(driver):
 
 
 def main():    
+    opened_file = file_to_write()
     companies_list = []
     url = 'https://wyszukiwarkaregon.stat.gov.pl/appBIR/index.aspx'
     driver = webdriver.Chrome()
@@ -149,6 +162,14 @@ def main():
     check_status(driver, mode)
     while True:  
         try:
+            try:
+                popup = driver.switch_to_alert()
+                popup.accept()
+                time.sleep(0.25)
+                write_exception(driver, opened_file)
+                check_status(driver, mode)
+            except NoAlertPresentException as e:
+                pass
             if empty_page(driver):
                 check_status(driver, mode)    
             rows = count_rows(driver)
@@ -173,10 +194,12 @@ def main():
         except NoSuchWindowException:
             write_to_file(companies_list)
             print('\nbye bye')
+            opened_file.close()
             exit()
         except:
             write_to_file(companies_list)
             print('\nbye bye')
+            opened_file.close()
             exit()
 
 if __name__ == '__main__':
