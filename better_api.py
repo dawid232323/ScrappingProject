@@ -113,6 +113,11 @@ class Result_Arrays:
                     # self.data_frame.to_csv('regony.csv', index=False, sep=';')
                     counter += 1  
                     print('Done ', self.data_frame.iloc[i][0] ,self.data_frame.iloc[i][3])
+                except KeyboardInterrupt:
+                    self.emergency_break(num)
+                    num += 1
+                    exit()
+                
                 except Exception as e:
                     print('first if ', e)
                     counter += 1  
