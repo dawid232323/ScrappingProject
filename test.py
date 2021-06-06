@@ -20,12 +20,16 @@ i = 0
 #     time.sleep(1)
 #     i += 1
 
-lis = Select(driver.find_element_by_xpath('//*[@id="selUlica"]'))
+lis = Select(driver.find_element_by_xpath('//*[@id="selMiejscowosc"]'))
 options = lis.options
 print(options, len(options), sep='\n')
+states = Select(driver.find_element_by_xpath('//*[@id="selWojewodztwo"]'))
+selected_option = states.first_selected_option
+print(selected_option.text)
 # wanted_street = options[1]
 # wanted_street_value = wanted_street.get_attribute("value")
 # print(wanted_street_value)
 # lis.select_by_value(wanted_street_value)
 # time.sleep(2)
 # driver.close()
+# driver.refresh()

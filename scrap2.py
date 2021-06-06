@@ -28,6 +28,7 @@ class page_hanlder():
     current_town = None
     current_street = None
     current_municipility = None
+    current_state = None
 
     def __init__(self, driver, mode):
         # self.current_street = current_street
@@ -35,6 +36,8 @@ class page_hanlder():
         self.mode = mode
 
     def get_municipilities_list(self):
+        states_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selWojewodztwo"]'))
+        self.current_state = states_list.first_selected_option.get_attribute('value')
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
         self.municipilities_options = self.list_of_municipilities.options
         self.current_municipility = self.municipilities_options[self.municipility_counter].get_attribute("value")
@@ -43,12 +46,20 @@ class page_hanlder():
         self.list_of_streets = Select(self.web_driver.find_element_by_xpath('//*[@id="selUlica"]'))
         self.options = self.list_of_streets.options
         self.counter = 0
+        while len(self.options) == 0:
+            print("czekam na listę ulic")
+            time.sleep(0.3)
+            self.options = self.list_of_streets.options
         self.current_street = self.options[self.counter].get_attribute('value')
     
     def get_towns_lists(self):
             self.list_of_towns = Select(self.web_driver.find_element_by_xpath('//*[@id="selMiejscowosc"]'))
             self.towns_options = self.list_of_towns.options
             self.town_counter = 0
+            while len(self.towns_options) == 0:
+                print('czekam na listę miast')
+                time.sleep(0.3)
+                self.towns_options = self.list_of_towns.options
             self.current_town = self.towns_options[self.town_counter].get_attribute('value')
 
     def empty_page(self):
@@ -77,18 +88,18 @@ class page_hanlder():
             self.last_number = 0
     
     def change_municipility(self):
-        search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
+        # search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
         wanted_municipility = self.municipilities_options[self.municipility_counter + 1].get_attribute('value')    
         self.list_of_municipilities.select_by_value(wanted_municipility)
         self.municipility_counter += 1
         self.current_municipility = wanted_municipility
         self.town_counter = 0
-        search_button.click()
+        self.get_towns_lists()
+        # search_button.click()
 
     def change_town(self):
         if self.current_town == self.towns_options[-1].get_attribute('value'):
             self.change_municipility()
-            self.get_towns_lists()
         else:
             search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
             wanted_town = self.towns_options[self.town_counter + 1].get_attribute('value')
@@ -150,6 +161,10 @@ class page_hanlder():
                 else:
                     self.change_selector()
 
+    def emergency_refresh(self):
+        self.web_driver.refresh()
+        addres_button = self.web_driver.find_element_by_xpath('//*[@id="btnMenuSzukajPoAdresie"]')
+        addres_button.click()
 
 
     
