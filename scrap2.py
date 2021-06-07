@@ -239,41 +239,43 @@ class page_hanlder():
     
     
 
+class data_handler():
 
-def write_file():
-    pass
 
-def making_item(companies_list, rows):
-    i = 1
-    for row in rows: 
-                regon = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[1]' % i).text
-                type = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[2]' %i).text
-                name = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[3]' % i).text
-                state = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[4]' % i).text
-                county = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[5]' % i).text
-                community = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[6]' % i).text
-                postalCode = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[7]' % i).text
-                city = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[8]' % i).text
-                street = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[9]' % i).text
-                deleted = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[10]' % i).text
-                i += 1
-                item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
-                "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                companies_list.append(item)        
-    print('DONE')
-    
-def count_rows(driver):
-    rows = []
-    element = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]')
-    num = 2
-    while(True):
-                rows.append(element)
-                try:
-                    element = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]' %num)
-                    num += 1
-                except:
-                    break
-    return rows
+    def write_file(self):
+        pass
+
+    def making_item(self, companies_list, rows):
+        i = 1
+        for row in rows: 
+                    regon = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[1]' % i).text
+                    type = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[2]' %i).text
+                    name = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[3]' % i).text
+                    state = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[4]' % i).text
+                    county = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[5]' % i).text
+                    community = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[6]' % i).text
+                    postalCode = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[7]' % i).text
+                    city = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[8]' % i).text
+                    street = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[9]' % i).text
+                    deleted = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[10]' % i).text
+                    i += 1
+                    item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
+                    "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
+                    companies_list.append(item)        
+        print('DONE')
+        
+    def count_rows(self, driver):
+        rows = []
+        element = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]')
+        num = 2
+        while(True):
+                    rows.append(element)
+                    try:
+                        element = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]' %num)
+                        num += 1
+                    except:
+                        break
+        return rows
 
 
 if __name__ == '__main__':
