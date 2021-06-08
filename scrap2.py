@@ -4,6 +4,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchWindowException, NoAlertPresentException
 import time
 from selenium.webdriver.support.ui import Select
+import pandas as pd 
+import xlsxwriter
+import os 
 
 list_of_streets = []
 
@@ -17,7 +20,7 @@ class page_hanlder():
     mode  = str
     counter = 1
     town_counter = 1
-    municipility_counter = 2
+    municipility_counter = 1
     list_of_streets = None
     list_of_towns = None
     list_of_municipilities = None
@@ -28,11 +31,16 @@ class page_hanlder():
     current_town = None
     current_street = None
     current_municipility = None
-    current_state = None
+    # current_state = None
+    # current_county = None
 
     def __init__(self, driver, mode):
         # self.current_street = current_street
         self.web_driver = driver
+        self.states_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selWojewodztwo"]'))
+        self.current_state = self.states_list.first_selected_option.get_attribute('value')
+        self.counties_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selPowiat"]'))
+        self.current_county = self.counties_list.first_selected_option.get_attribute('value')
         self.mode = mode
         if self.mode == 't':
             self.town_counter = 1
@@ -40,8 +48,6 @@ class page_hanlder():
             self.counter = 1
 
     def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
-        states_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selWojewodztwo"]'))
-        self.current_state = states_list.first_selected_option.get_attribute('value')
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
         self.municipilities_options = self.list_of_municipilities.options
         self.current_municipility = self.municipilities_options[self.municipility_counter].get_attribute("value") #current municipility is the one on the counter's position. Counter is never changed after init at tths moment
@@ -235,19 +241,38 @@ class page_hanlder():
                 current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
                 result = current_number.split('/')
 
-
+    def get_county_name(self):
+        return self.counties_list.first_selected_option.text
     
     
 
 class data_handler():
 
+    def __init__(self, page_handler, driver, state):
+        self.page_handler = page_handler
+        self.rows = []
+        self.companies_list = []
+        self.web_driver = driver
+        self.current_output_number = 1
+        self.current_state_name = state
 
-    def write_file(self):
-        pass
+    def count_rows(self):
+        element = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]')
+        num = 2
+        while(True):
+                    self.rows.append(element)
+                    try:
+                        element = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]' %num)
+                        num += 1
+                    except:
+                        print('policzyłem rekordy')
+                        break
+        
 
-    def making_item(self, companies_list, rows):
+    def making_item(self):
+        print('zaczyanm czytać tabele')
         i = 1
-        for row in rows: 
+        for row in self.rows: 
                     regon = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[1]' % i).text
                     type = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[2]' %i).text
                     name = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[3]' % i).text
@@ -261,21 +286,30 @@ class data_handler():
                     i += 1
                     item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                    companies_list.append(item)        
+                    self.companies_list.append(item)        
+        self.rows.clear()
         print('DONE')
         
-    def count_rows(self, driver):
-        rows = []
-        element = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]')
-        num = 2
-        while(True):
-                    rows.append(element)
-                    try:
-                        element = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]' %num)
-                        num += 1
-                    except:
-                        break
-        return rows
+    def write_file(self):
+        data_frame = pd.DataFrame(self.companies_list)
+        name = str(self.current_state_name) + '_' + str(self.current_output_number) + '.xlsx'
+        writer = pd.ExcelWriter(name, engine='xlsxwriter')
+        data_frame.to_excel(writer, sheet_name='sheet1', header=False, index=False)
+        writer.save()
+        self.current_output_number += 1
+        self.companies_list.clear()
+
+def make_new_directory(current_state_name):
+    path = os.getcwd()
+    wanted_path = path + '/' + current_state_name
+    try:
+        os.mkdir(wanted_path)
+        os.chdir(wanted_path)
+    except Exception as ex:
+        print(ex)
+
+
+    
 
 
 if __name__ == '__main__':
@@ -286,12 +320,26 @@ if __name__ == '__main__':
     while mode not in ('s', 't'):
         mode = input('Type s for streets t for towns ')
     pageHandler = page_hanlder(driver, mode)
+    county_name = pageHandler.get_county_name()
+    dataHandler = data_handler(pageHandler, driver, county_name)
     i = 0
     pageHandler.get_municipilities_list()
     pageHandler.get_towns_lists()
     pageHandler.get_street_list()
-    while True:
+    make_new_directory(county_name)
+    i = 0
+    while i < 20:
+        try:
+            dataHandler.count_rows()
+            dataHandler.making_item()
+        except:
+            time.sleep(0.5)
+            continue
+        if i%10 == 0:
+            dataHandler.write_file()
         pageHandler.check_status()
         time.sleep(1)
         # print('next iteration')
         i += 1
+
+    dataHandler.write_file()
