@@ -7,16 +7,18 @@ from selenium.webdriver.support.ui import Select
 import pandas as pd 
 import xlsxwriter
 import os 
+import sys
 
-list_of_streets = []
+working_switch = True
 
 
-current_town = None
-current_municipility = None
+def exit_programme(dataHandler, driver):
+    dataHandler.write_file()
+    driver.close()
+    print('bye bye')
+
 
 class page_hanlder():
-    # current_street = None
-    web_driver = None
     mode  = str
     counter = 1
     town_counter = 1
@@ -84,6 +86,24 @@ class page_hanlder():
                 return False
         except:
             return False
+    
+    def page_failure(self):
+        try:
+            elem = self.web_driver.find_element_by_xpath('//*[@id="pnlContents"]/div[3]/div[3]/table').text
+            if elem == "":
+                self.change_selector()
+                try:
+                    elem = self.web_driver.find_element_by_xpath('//*[@id="pnlContents"]/div[3]/div[3]/table').text
+                    if elem == "":
+                        self.emergency_refresh()
+                except:
+                    return False
+                time.sleep(2)
+            return True
+        except:
+            return False
+        
+
 
     def change_street(self): #function that changes street
         if self.current_street == self.options[-1].get_attribute('value'): #if current street is the last one on the list of streets, mode is changed to towns, because at this point we don't konow
@@ -100,10 +120,12 @@ class page_hanlder():
             search_button.click()
             self.current_street = wanted_street #current street is changed to the wanted one (that's next street realtive to the current_one)
             self.counter += 1 #position of the counter is changed
-            self.last_number = 0 #last number represents amount of pages displayed so far 
+            self.last_number = -1 #last number represents amount of pages displayed so far 
     
     def change_municipility(self): #function that changes municipility to the next one 
         # search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
+        if self.current_municipility == self.municipilities_options[-1].get_attribute('value'):
+            working_switch = False
         wanted_municipility = self.municipilities_options[self.municipility_counter + 1].get_attribute('value') #wanted municipility is the next one relative to the current one    
         self.list_of_municipilities.select_by_value(wanted_municipility)
         self.municipility_counter += 1 #counter of municipilities is increased by one
@@ -170,31 +192,33 @@ class page_hanlder():
         next_page.click()
         time.sleep(0.5)
 
-    def check_status(self):
+    def check_status(self): #function that chcecks the status of the page 
         
         print('Checking status')
-        if self.empty_page():
+        if self.empty_page(): #if page has no records change selector is called
             self.change_selector()
         else:
-            element = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
+            element = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text #line that checks 
+            #number of pages displayed so far and number of all the pages on the current street/town 
             result = element.split('/')
-            if len(result) == 1:
+            if len(result) == 1: #if lenght of array with numbers equals 1 it means, that there is only one page
                 self.change_selector()
             else:
-                if (int(result[0]) < int(result[1])):
-                    print(result[0])
+                if (int(result[0]) < int(result[1])): #while the first number is smaller than the second one
+                    print(result[0]) #printing current page so it is known 
                     print('changing page')
-                    self.last_number = result[0]
+                    self.last_number = result[0] #last number is needed in case of emergency refresh
                     self.next_page()
-                    element = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
+                    element = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text #same mechanism as higher
                     result = element.split('/')
-                    while result[0] == self.last_number:
+                    while result[0] == self.last_number: #while we wait for the pages to change, this mechanism stops the program
+                        #in skipping pages 
                         time.sleep(0.25)
                         # self.next_page()
                         element = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
                         result = element.split('/')
 
-                else:
+                else: #if first number equals the second one street/town is changed 
                     self.change_selector()
 
     def emergency_refresh(self):
@@ -272,21 +296,27 @@ class data_handler():
     def making_item(self):
         print('zaczyanm czytać tabele')
         i = 1
-        for row in self.rows: 
-                    regon = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[1]' % i).text
-                    type = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[2]' %i).text
-                    name = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[3]' % i).text
-                    state = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[4]' % i).text
-                    county = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[5]' % i).text
-                    community = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[6]' % i).text
-                    postalCode = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[7]' % i).text
-                    city = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[8]' % i).text
-                    street = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[9]' % i).text
-                    deleted = row.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[10]' % i).text
+        while True:
+            try:
+                    regon = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[1]' % i).text
+                    type = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[2]' %i).text
+                    name = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[3]' % i).text
+                    state = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[4]' % i).text
+                    county = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[5]' % i).text
+                    community = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[6]' % i).text
+                    postalCode = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[7]' % i).text
+                    city = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[8]' % i).text
+                    street = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[9]' % i).text
+                    deleted = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[10]' % i).text
                     i += 1
                     item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                    self.companies_list.append(item)        
+                    self.companies_list.append(item)
+                    print('dodałem rekord do listy') 
+            except Exception:
+                type, value, traceback = sys.exc_info()
+                print('wyjątek przy making item', type, value, traceback)
+                break       
         self.rows.clear()
         print('DONE')
         
@@ -328,18 +358,20 @@ if __name__ == '__main__':
     pageHandler.get_street_list()
     make_new_directory(county_name)
     i = 0
-    while i < 20:
-        try:
-            dataHandler.count_rows()
-            dataHandler.making_item()
-        except:
-            time.sleep(0.5)
-            continue
-        if i%10 == 0:
+    while working_switch:
+        if not pageHandler.page_failure():
+            try:
+                dataHandler.making_item()
+            except KeyboardInterrupt:
+                exit_programme(dataHandler, driver)
+            except:
+                time.sleep(0.5)
+                continue
+            pageHandler.check_status()
+            time.sleep(1)
+        else:
             dataHandler.write_file()
-        pageHandler.check_status()
-        time.sleep(1)
         # print('next iteration')
         i += 1
-
-    dataHandler.write_file()
+    exit_programme(dataHandler, driver)
+    # dataHandler.write_file()
