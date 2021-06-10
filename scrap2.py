@@ -44,9 +44,23 @@ class page_hanlder():
         self.counties_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selPowiat"]'))
         self.current_county = self.counties_list.first_selected_option.get_attribute('value')
         self.mode = mode
-        if self.mode == 't':
-            self.town_counter = 1
-        elif self.mode == 's':
+        self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
+        self.municipilities_options = self.list_of_municipilities.options
+        self.current_municipility = self.list_of_municipilities.first_selected_option
+        self.municipility_counter = self.municipilities_options.index(self.current_municipility)
+        self.current_municipility = self.municipilities_options[self.municipility_counter].get_attribute('value')
+        self.list_of_towns = Select(self.web_driver.find_element_by_xpath('//*[@id="selMiejscowosc"]'))
+        self.towns_options = self.list_of_towns.options
+        self.current_town = self.list_of_towns.first_selected_option
+        self.town_counter = self.towns_options.index(self.current_town)
+        self.current_town = self.towns_options[self.town_counter].get_attribute('value')
+        self.list_of_streets = Select(self.web_driver.find_element_by_xpath('//*[@id="selUlica"]'))
+        self.options = self.list_of_streets.options
+        if self.mode == 's':
+            self.current_street = self.list_of_streets.first_selected_option
+            self.counter = self.options.index(self.current_street)
+            self.current_street = self.options[self.counter]
+        else:
             self.counter = 1
 
     def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
@@ -77,10 +91,10 @@ class page_hanlder():
                 self.towns_options = self.list_of_towns.options
             self.current_town = self.towns_options[self.town_counter].get_attribute('value') #current town is set to first town in the list
 
-    def empty_page(self): #function that checks if page is empty 
+    def empty_page(self): #function that checks if page is empty and has no data in it 
         try:
             message = self.web_driver.find_element_by_xpath('//*[@id="divInfoKomunikat"]').text
-            if message == 'Nie znaleziono podmiotów':
+            if message == 'Nie znaleziono podmiotów.':
                 return True
             else:
                 return False
@@ -89,7 +103,7 @@ class page_hanlder():
     
     def page_failure(self):
         try:
-            elem = self.web_driver.find_element_by_xpath('//*[@id="pnlContents"]/div[3]/div[3]/table').text
+            elem = self.web_driver.find_element_by_xpath('//*[@id="divInfoKomunikat"]').text
             if elem == "":
                 self.change_selector()
                 try:
@@ -197,6 +211,7 @@ class page_hanlder():
         print('Checking status')
         if self.empty_page(): #if page has no records change selector is called
             self.change_selector()
+            time.sleep(1) 
         else:
             element = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text #line that checks 
             #number of pages displayed so far and number of all the pages on the current street/town 
@@ -311,11 +326,16 @@ class data_handler():
                     i += 1
                     item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                    self.companies_list.append(item)
-                    print('dodałem rekord do listy') 
+                    if self.page_handler.empty_page() == False and regon == '':
+                        print('emergency refresh')
+                        self.page_handler.emergency_refresh()
+                        self.write_file()
+                        break
+                    elif regon != '':
+                        self.companies_list.append(item) 
             except Exception:
-                type, value, traceback = sys.exc_info()
-                print('wyjątek przy making item', type, value, traceback)
+                # type, value, traceback = sys.exc_info()
+                # print('wyjątek przy making item', type, value, traceback)
                 break       
         self.rows.clear()
         print('DONE')
@@ -353,25 +373,15 @@ if __name__ == '__main__':
     county_name = pageHandler.get_county_name()
     dataHandler = data_handler(pageHandler, driver, county_name)
     i = 0
-    pageHandler.get_municipilities_list()
-    pageHandler.get_towns_lists()
-    pageHandler.get_street_list()
     make_new_directory(county_name)
     i = 0
     while working_switch:
-        if not pageHandler.page_failure():
-            try:
-                dataHandler.making_item()
-            except KeyboardInterrupt:
-                exit_programme(dataHandler, driver)
-            except:
-                time.sleep(0.5)
-                continue
+        try:
+            dataHandler.making_item()
             pageHandler.check_status()
-            time.sleep(1)
-        else:
-            dataHandler.write_file()
-        # print('next iteration')
-        i += 1
-    exit_programme(dataHandler, driver)
+        except KeyboardInterrupt:
+            exit_programme(dataHandler, driver)
+        except Exception as ex:
+            print(ex)
+            continue
     # dataHandler.write_file()

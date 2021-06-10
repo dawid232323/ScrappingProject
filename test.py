@@ -50,12 +50,14 @@ selected_option = states.first_selected_option
 print(selected_option.text)
 
 
-name1 = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[1]').text
-name10 = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[10]/td[1]').text
+# name1 = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[1]').text
+# name10 = driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[10]/td[1]').text
+# if name1 == name10 == '':
+#         print('name 1 is :', name1, '\nname10 is ', name10)
 
-print('name 1 is :', name1, '\nname10 is ', name10)
-
-
+print('robie komunikat', driver.find_element_by_xpath('//*[@id="divInfoKomunikat"]').text)
+if 'Nie znaleziono podmiotów' == driver.find_element_by_xpath('//*[@id="divInfoKomunikat"]').text:
+        print('ruwna sie')
 # wanted_street = options[1]
 # wanted_street_value = wanted_street.get_attribute("value")
 # print(wanted_street_value)
