@@ -125,6 +125,7 @@ class page_hanlder():
             print('ostatnia ulica')
             self.mode = 't'
             self.change_town()
+            self.last_number = -1
             
         else: #if street is not the last one next one is choosen
             print('przystę[uję do zmiany ulicy')
@@ -279,6 +280,7 @@ class page_hanlder():
                 self.next_page()
                 current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
                 result = current_number.split('/')
+            
 
     def get_county_name(self):
         return self.counties_list.first_selected_option.text
@@ -294,6 +296,7 @@ class data_handler():
         self.web_driver = driver
         self.current_output_number = 1
         self.current_state_name = state
+        self.regons_check = set()
 
     def count_rows(self):
         element = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]')
@@ -311,6 +314,7 @@ class data_handler():
     def making_item(self):
         print('zaczyanm czytać tabele')
         i = 1
+        self.regons_check.clear()
         while True:
             try:
                     regon = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]/td[1]' % i).text
@@ -328,16 +332,17 @@ class data_handler():
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
                     if self.page_handler.empty_page() == False and regon == '':
                         print('emergency refresh')
-                        self.page_handler.emergency_refresh()
                         self.write_file()
+                        self.page_handler.emergency_refresh()
+                        
                         break
                     elif regon != '':
+                        self.regons_check.add(regon)
                         self.companies_list.append(item) 
             except Exception:
                 # type, value, traceback = sys.exc_info()
                 # print('wyjątek przy making item', type, value, traceback)
                 break       
-        self.rows.clear()
         print('DONE')
         
     def write_file(self):
@@ -377,8 +382,15 @@ if __name__ == '__main__':
     i = 0
     while working_switch:
         try:
-            dataHandler.making_item()
-            pageHandler.check_status()
+            if pageHandler.empty_page():
+                pageHandler.check_status()
+            elif driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[1]').text in dataHandler.regons_check:
+                print('regon conflict')
+                time.sleep(0.5)
+                continue
+            else:
+                dataHandler.making_item()
+                pageHandler.check_status()
         except KeyboardInterrupt:
             exit_programme(dataHandler, driver)
         except Exception as ex:
