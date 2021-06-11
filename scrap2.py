@@ -273,7 +273,7 @@ class page_hanlder():
             self.list_of_streets.select_by_value(current_street_copy)
         search_button.click()
         time.sleep(0.5)
-        if int(self.last_number) > -1:
+        if int(self.last_number) > -1: 
             current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
             result = current_number.split('/')
             while result[0] != self.last_number:
@@ -330,7 +330,8 @@ class data_handler():
                     i += 1
                     item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                    if self.page_handler.empty_page() == False and regon == '':
+                    if self.page_handler.empty_page() == False and regon == '': #tutaj dorobić jakiś checker, który przy pierwszej takiej sytuacji jest zwięszany o 1 i wywoływany jest check status, a jeśli pod rząd wydarzy się taka sytuacja, to dopiero wtedy emergency refresh
+                        #dodatkowo po refreshu ostatni ostatni numer jest ilością stron, to wtedy nalezy sprawdzić status i w tej funkcji dać continue, tak zeby nie sprawdzac statusu dwa razy
                         print('emergency refresh')
                         self.write_file()
                         self.page_handler.emergency_refresh()
