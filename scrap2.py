@@ -297,20 +297,8 @@ class data_handler():
         self.current_output_number = 1
         self.current_state_name = state
         self.regons_check = set()
-
-    def count_rows(self):
-        element = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]')
-        num = 2
-        while(True):
-                    self.rows.append(element)
-                    try:
-                        element = self.web_driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[%d]' %num)
-                        num += 1
-                    except:
-                        print('policzyłem rekordy')
-                        break
+        self.refresh_control = 0
         
-
     def making_item(self):
         print('zaczyanm czytać tabele')
         i = 1
@@ -330,16 +318,25 @@ class data_handler():
                     i += 1
                     item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                    if self.page_handler.empty_page() == False and regon == '': #tutaj dorobić jakiś checker, który przy pierwszej takiej sytuacji jest zwięszany o 1 i wywoływany jest check status, a jeśli pod rząd wydarzy się taka sytuacja, to dopiero wtedy emergency refresh
+                    if self.page_handler.empty_page() == False and regon == '' and self.refresh_control == 0: #tutaj dorobić jakiś checker, który przy pierwszej takiej sytuacji jest zwięszany o 1 i wywoływany jest check status, a jeśli pod rząd wydarzy się taka sytuacja, to dopiero wtedy emergency refresh
                         #dodatkowo po refreshu ostatni ostatni numer jest ilością stron, to wtedy nalezy sprawdzić status i w tej funkcji dać continue, tak zeby nie sprawdzac statusu dwa razy
+                        print('first strike')
+                        self.refresh_control = 1
+                        self.page_handler.check_status()
+                        time.sleep(2)
+                        i = 1
+                        continue
+                        # break
+                    elif self.page_handler.empty_page() == False and regon == '' and self.refresh_control == 1:
                         print('emergency refresh')
                         self.write_file()
                         self.page_handler.emergency_refresh()
-                        
+                        self.refresh_control = 0
                         break
                     elif regon != '':
                         self.regons_check.add(regon)
                         self.companies_list.append(item) 
+                        self.refresh_control = 0
             except Exception:
                 # type, value, traceback = sys.exc_info()
                 # print('wyjątek przy making item', type, value, traceback)
@@ -361,6 +358,8 @@ def make_new_directory(current_state_name):
     try:
         os.mkdir(wanted_path)
         os.chdir(wanted_path)
+    except FileExistsError:
+        os.chdir(wanted_path)
     except Exception as ex:
         print(ex)
 
@@ -378,20 +377,26 @@ if __name__ == '__main__':
     pageHandler = page_hanlder(driver, mode)
     county_name = pageHandler.get_county_name()
     dataHandler = data_handler(pageHandler, driver, county_name)
-    i = 0
     make_new_directory(county_name)
+    iteration_counter = 0
     i = 0
     while working_switch:
         try:
             if pageHandler.empty_page():
                 pageHandler.check_status()
             elif driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[1]').text in dataHandler.regons_check:
-                print('regon conflict')
-                time.sleep(0.5)
-                continue
+                if iteration_counter == 20:
+                    print('iteration counter equals 50')
+                    pageHandler.check_status()
+                    iteration_counter = 0
+                else:
+                    print('regon conflict')
+                    time.sleep(0.5)
+                    continue
             else:
                 dataHandler.making_item()
                 pageHandler.check_status()
+                iteration_counter = 0
         except KeyboardInterrupt:
             exit_programme(dataHandler, driver)
         except Exception as ex:
