@@ -62,6 +62,7 @@ class page_hanlder():
             self.current_street = self.options[self.counter]
         else:
             self.counter = 1
+        self.goal_number = 0
 
     def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
@@ -211,6 +212,7 @@ class page_hanlder():
         
         print('Checking status')
         if self.empty_page(): #if page has no records change selector is called
+            self.goal_number = 0
             self.change_selector()
             time.sleep(1) 
         else:
@@ -218,8 +220,10 @@ class page_hanlder():
             #number of pages displayed so far and number of all the pages on the current street/town 
             result = element.split('/')
             if len(result) == 1: #if lenght of array with numbers equals 1 it means, that there is only one page
+                self.goal_number = 0
                 self.change_selector()
             else:
+                self.goal_number = int(result[1])
                 if (int(result[0]) < int(result[1])): #while the first number is smaller than the second one
                     print(result[0]) #printing current page so it is known 
                     print('changing page')
@@ -235,43 +239,46 @@ class page_hanlder():
                         result = element.split('/')
 
                 else: #if first number equals the second one street/town is changed 
+                    self.goal_number = 0
                     self.change_selector()
 
-    def emergency_refresh(self):
+    def emergency_refresh(self): #function that refreshes page after failure and sets it to the last remembered state 
         las_number_copy = self.last_number
         current_municipility_copy = self.current_municipility
         current_town_copy = self.current_town
         current_street_copy = self.current_street
         current_state_copy = self.current_state
         current_county_copy = self.current_county
-        counters_copy = [self.counter, self.town_counter, self.municipility_counter]
-        self.web_driver.refresh()
+        counters_copy = [self.counter, self.town_counter, self.municipility_counter] #copying all parameters
+        self.web_driver.refresh() #refreshing page
         time.sleep(3)
-        addres_button = self.web_driver.find_element_by_xpath('//*[@id="btnMenuSzukajPoAdresie"]')
-        addres_button.click()
+        addres_button = self.web_driver.find_element_by_xpath('//*[@id="btnMenuSzukajPoAdresie"]') 
+        addres_button.click() #clicking address button
         time.sleep(3)
         self.list_of_states = Select(self.web_driver.find_element_by_xpath('//*[@id="selWojewodztwo"]')) 
-        self.list_of_states.select_by_value(current_state_copy)
+        self.list_of_states.select_by_value(current_state_copy) #selecting last state 
         time.sleep(0.5)
         self.counties_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selPowiat"]'))
-        self.counties_list.select_by_value(current_county_copy)
+        self.counties_list.select_by_value(current_county_copy) #selecting last county 
         time.sleep(0.5)
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]')) 
-        self.list_of_municipilities.select_by_value(current_municipility_copy)
+        self.list_of_municipilities.select_by_value(current_municipility_copy) #selecting last municipility
         time.sleep(0.5)
         self.list_of_towns = Select(self.web_driver.find_element_by_xpath('//*[@id="selMiejscowosc"]'))
-        self.list_of_towns.select_by_value(current_town_copy)
+        self.list_of_towns.select_by_value(current_town_copy) #selecting last town 
         time.sleep(0.5)
         search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
-        self.get_municipilities_list()
+        self.get_municipilities_list() 
         self.get_towns_lists()
         self.get_street_list()
         self.counter = counters_copy[0]
         self.town_counter = counters_copy[1]
-        self.municipility_counter = counters_copy[2]
-        if len(self.options) != 1:
-            self.list_of_streets.select_by_value(current_street_copy)
+        self.municipility_counter = counters_copy[2] #getting new lists and setting counters 
         search_button.click()
+        if not self.search_for_popup():
+            self.mode = 's'
+            self.list_of_streets.select_by_value(current_street_copy)
+            search_button.click()
         time.sleep(0.5)
         if int(self.last_number) > -1: 
             current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
@@ -318,7 +325,7 @@ class data_handler():
                     i += 1
                     item = {'Regon': regon, 'Typ': type, 'Nazwa': name, 'Województwo': state, 'Powiat': county, 'Gmina': community, 
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
-                    if self.page_handler.empty_page() == False and regon == '' and self.refresh_control == 0: #tutaj dorobić jakiś checker, który przy pierwszej takiej sytuacji jest zwięszany o 1 i wywoływany jest check status, a jeśli pod rząd wydarzy się taka sytuacja, to dopiero wtedy emergency refresh
+                    if self.page_handler.empty_page() == False and regon == '' and self.page_handler.goal_number == int(self.page_handler.last_number) + 1: #tutaj dorobić jakiś checker, który przy pierwszej takiej sytuacji jest zwięszany o 1 i wywoływany jest check status, a jeśli pod rząd wydarzy się taka sytuacja, to dopiero wtedy emergency refresh
                         #dodatkowo po refreshu ostatni ostatni numer jest ilością stron, to wtedy nalezy sprawdzić status i w tej funkcji dać continue, tak zeby nie sprawdzac statusu dwa razy
                         print('first strike')
                         self.refresh_control = 1
@@ -327,12 +334,18 @@ class data_handler():
                         i = 1
                         continue
                         # break
+                    elif self.page_handler.empty_page() == False and regon == '' and self.page_handler.goal_number != int(self.page_handler.last_number) + 1:
+                        print('emergency refresh')
+                        self.write_file()
+                        self.page_handler.emergency_refresh()
+                        self.refresh_control = 0
+                        continue
                     elif self.page_handler.empty_page() == False and regon == '' and self.refresh_control == 1:
                         print('emergency refresh')
                         self.write_file()
                         self.page_handler.emergency_refresh()
                         self.refresh_control = 0
-                        break
+                        continue
                     elif regon != '':
                         self.regons_check.add(regon)
                         self.companies_list.append(item) 
@@ -385,12 +398,13 @@ if __name__ == '__main__':
             if pageHandler.empty_page():
                 pageHandler.check_status()
             elif driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[1]').text in dataHandler.regons_check:
-                if iteration_counter == 20:
+                if iteration_counter == 5:
                     print('iteration counter equals 50')
                     pageHandler.check_status()
                     iteration_counter = 0
                 else:
-                    print('regon conflict')
+                    iteration_counter += 1
+                    print('regon conflict, iterator is ', iteration_counter)
                     time.sleep(0.5)
                     continue
             else:
