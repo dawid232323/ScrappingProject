@@ -275,6 +275,7 @@ class page_hanlder():
         self.town_counter = counters_copy[1]
         self.municipility_counter = counters_copy[2] #getting new lists and setting counters 
         search_button.click()
+        time.sleep(2)
         if not self.search_for_popup():
             self.mode = 's'
             self.list_of_streets.select_by_value(current_street_copy)
@@ -284,7 +285,10 @@ class page_hanlder():
             current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
             result = current_number.split('/')
             while result[0] != self.last_number:
-                self.next_page()
+                try:
+                    self.next_page()
+                except Exception:
+                    continue
                 current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
                 result = current_number.split('/')
             
@@ -327,7 +331,7 @@ class data_handler():
                     "Kod Pocztowy": postalCode, 'Miasto': city, 'Ulica': street, 'Informacja u usniętym wpisie': deleted}
                     if self.page_handler.empty_page() == False and regon == '' and self.page_handler.goal_number == int(self.page_handler.last_number) + 1: #tutaj dorobić jakiś checker, który przy pierwszej takiej sytuacji jest zwięszany o 1 i wywoływany jest check status, a jeśli pod rząd wydarzy się taka sytuacja, to dopiero wtedy emergency refresh
                         #dodatkowo po refreshu ostatni ostatni numer jest ilością stron, to wtedy nalezy sprawdzić status i w tej funkcji dać continue, tak zeby nie sprawdzac statusu dwa razy
-                        print('first strike')
+                        print('first strike last_number = ', self.page_handler.last_number, 'goal number = ', self.page_handler.goal_number)
                         self.refresh_control = 1
                         self.page_handler.check_status()
                         time.sleep(2)
@@ -335,13 +339,13 @@ class data_handler():
                         continue
                         # break
                     elif self.page_handler.empty_page() == False and regon == '' and self.page_handler.goal_number != int(self.page_handler.last_number) + 1:
-                        print('emergency refresh')
+                        print('emergency refresh after not equal numbers', self.page_handler.last_number, 'goal number = ', self.page_handler.goal_number)
                         self.write_file()
                         self.page_handler.emergency_refresh()
                         self.refresh_control = 0
                         continue
                     elif self.page_handler.empty_page() == False and regon == '' and self.refresh_control == 1:
-                        print('emergency refresh')
+                        print('emergency refresh after refresh control', self.page_handler.last_number, 'goal number = ', self.page_handler.goal_number)
                         self.write_file()
                         self.page_handler.emergency_refresh()
                         self.refresh_control = 0
