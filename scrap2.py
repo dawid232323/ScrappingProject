@@ -284,13 +284,16 @@ class page_hanlder():
         if int(self.last_number) > -1: 
             current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
             result = current_number.split('/')
-            while result[0] != self.last_number:
+            print('result[0] is ', result[0], 'last number wil be ', self.last_number)
+            while int(result[0]) < int(self.last_number):
                 try:
+                    print('current number ', result[0])
                     self.next_page()
+                    current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
+                    result = current_number.split('/')
                 except Exception:
                     continue
-                current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
-                result = current_number.split('/')
+                
             
 
     def get_county_name(self):
