@@ -23,18 +23,6 @@ class page_hanlder():
     counter = 1
     town_counter = 1
     municipility_counter = 1
-    list_of_streets = None
-    list_of_towns = None
-    list_of_municipilities = None
-    options = None
-    municipilities_options = None
-    towns_options = None
-    last_number = None
-    current_town = None
-    current_street = None
-    current_municipility = None
-    # current_state = None
-    # current_county = None
 
     def __init__(self, driver, mode):
         # self.current_street = current_street
@@ -63,6 +51,7 @@ class page_hanlder():
         else:
             self.counter = 1
         self.goal_number = 0
+        self.working_switch = True
 
     def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
@@ -141,19 +130,20 @@ class page_hanlder():
     def change_municipility(self): #function that changes municipility to the next one 
         # search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
         if self.current_municipility == self.municipilities_options[-1].get_attribute('value'):
-            working_switch = False
-        wanted_municipility = self.municipilities_options[self.municipility_counter + 1].get_attribute('value') #wanted municipility is the next one relative to the current one    
-        self.list_of_municipilities.select_by_value(wanted_municipility)
-        self.municipility_counter += 1 #counter of municipilities is increased by one
-        self.current_municipility = wanted_municipility #current municipility is changed to the next one 
-        self.town_counter = 0 #town counter is 0, because in the change town function, wanted town is counter + 1, so if it was equal to 1, we would skip the first item 
-        self.counter = 1
-        time.sleep(1)
-        self.get_towns_lists() #becuase municipility is changed, we need new list of towns
-        print('pobrałem liste miast po zmianie gminy')
-        print('długość listy miast ', len(self.towns_options), 'ostatni element:', self.towns_options[-1].text)
-        self.change_town() #because town field is empty, we need to change it to the first one. Because of town counter equal to 0, wanted town in this function becomes the first one on the list 
-        # search_button.click()
+            self.working_switch = False
+        else:     
+            wanted_municipility = self.municipilities_options[self.municipility_counter + 1].get_attribute('value') #wanted municipility is the next one relative to the current one    
+            self.list_of_municipilities.select_by_value(wanted_municipility)
+            self.municipility_counter += 1 #counter of municipilities is increased by one
+            self.current_municipility = wanted_municipility #current municipility is changed to the next one 
+            self.town_counter = 0 #town counter is 0, because in the change town function, wanted town is counter + 1, so if it was equal to 1, we would skip the first item 
+            self.counter = 1
+            time.sleep(1)
+            self.get_towns_lists() #becuase municipility is changed, we need new list of towns
+            print('pobrałem liste miast po zmianie gminy')
+            print('długość listy miast ', len(self.towns_options), 'ostatni element:', self.towns_options[-1].text)
+            self.change_town() #because town field is empty, we need to change it to the first one. Because of town counter equal to 0, wanted town in this function becomes the first one on the list 
+            # search_button.click()
 
     def search_for_popup(self):
         try:
@@ -289,6 +279,7 @@ class page_hanlder():
                 try:
                     print('current number ', result[0])
                     self.next_page()
+                    time.sleep(1)
                     current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
                     result = current_number.split('/')
                 except Exception:
@@ -312,7 +303,8 @@ class data_handler():
         self.current_state_name = state
         self.regons_check = set()
         self.refresh_control = 0
-        
+    
+
     def making_item(self):
         print('zaczyanm czytać tabele')
         i = 1
@@ -362,7 +354,8 @@ class data_handler():
                 # print('wyjątek przy making item', type, value, traceback)
                 break       
         print('DONE')
-        
+
+
     def write_file(self):
         data_frame = pd.DataFrame(self.companies_list)
         name = str(self.current_state_name) + '_' + str(self.current_output_number) + '.xlsx'
@@ -372,16 +365,37 @@ class data_handler():
         self.current_output_number += 1
         self.companies_list.clear()
 
-def make_new_directory(current_state_name):
-    path = os.getcwd()
-    wanted_path = path + '/' + current_state_name
-    try:
-        os.mkdir(wanted_path)
-        os.chdir(wanted_path)
-    except FileExistsError:
-        os.chdir(wanted_path)
-    except Exception as ex:
-        print(ex)
+class system_handler():
+    def __init__(self, county, data_hanlder):
+        self.current_county_name = county
+        self.current_path = os.getcwd()
+        self.data_handler = data_handler
+        self.output = 0
+
+    def resume_directory(self):
+        import re
+        names = os.listdir()
+        numbers = []
+        for name in names:
+            numbers.append(int(re.findall(r'\d+', name)[0]))
+        self.output = max(numbers) + 1
+        self.data_handler.change_output_number(self, output)
+        print('current outupt number = ', self.data_handler.current_output_number)
+
+    def make_new_directory(self):
+        path = os.getcwd()
+        wanted_path = path + '/' + self.current_county_name
+        self.current_path = wanted_path
+        try:
+            os.mkdir(wanted_path)
+            os.chdir(wanted_path)
+        except FileExistsError:
+            os.chdir(wanted_path)
+            print('Directory already exists')
+            self.current_path = os.getcwd()
+            self.resume_directory()
+        except Exception as ex:
+            print(ex)
 
 
     
@@ -397,12 +411,14 @@ if __name__ == '__main__':
     pageHandler = page_hanlder(driver, mode)
     county_name = pageHandler.get_county_name()
     dataHandler = data_handler(pageHandler, driver, county_name)
-    make_new_directory(county_name)
+    system_handler = system_handler(county_name, dataHandler)
+    system_handler.make_new_directory()
     iteration_counter = 0
     i = 0
-    while working_switch:
+    while pageHandler.working_switch:
         try:
             if pageHandler.empty_page():
+                time.sleep(1)
                 pageHandler.check_status()
             elif driver.find_element_by_xpath('//*[@id="divListaJednostek"]/table/tbody/tr[1]/td[1]').text in dataHandler.regons_check:
                 if iteration_counter == 5:
@@ -423,4 +439,4 @@ if __name__ == '__main__':
         except Exception as ex:
             print(ex)
             continue
-    # dataHandler.write_file()
+    exit_programme(dataHandler, driver)
