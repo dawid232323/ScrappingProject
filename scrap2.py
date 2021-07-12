@@ -2,14 +2,14 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchWindowException, NoAlertPresentException
-from selenium.webdriver.support.events import EventFiringWebDriver, AbstractEventListener
+# from selenium.webdriver.support.events import EventFiringWebDriver, AbstractEventListener
 import time
 from selenium.webdriver.support.ui import Select
 import pandas as pd 
 import xlsxwriter
 import os 
 import sys
-from scrap_sandbox import Listener
+# from scrap_sandbox import Listener
 
 working_switch = True
 
@@ -27,8 +27,9 @@ class page_hanlder():
     municipility_counter = 1
 
     def __init__(self, driver, mode):
-        # self.current_street = current_street
+        # self.current_street = current_street    
         self.web_driver = driver
+        self.progress_block = self.web_driver.find_element_by_xpath('//*[@id="divProgressIcon"]')
         self.states_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selWojewodztwo"]'))
         self.current_state = self.states_list.first_selected_option.get_attribute('value')
         self.counties_list = Select(self.web_driver.find_element_by_xpath('//*[@id="selPowiat"]'))
@@ -53,7 +54,14 @@ class page_hanlder():
         else:
             self.counter = 1
         self.goal_number = 0
+        self.last_number = -1
         self.working_switch = True
+
+    def wait_for_progress(self): #method that checks if progress bar is displayed
+        if self.progress_block.is_displayed():
+            return True
+        else:
+            return False
 
     def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
@@ -93,23 +101,6 @@ class page_hanlder():
         except:
             return False
     
-    def page_failure(self):
-        try:
-            elem = self.web_driver.find_element_by_xpath('//*[@id="divInfoKomunikat"]').text
-            if elem == "":
-                self.change_selector()
-                try:
-                    elem = self.web_driver.find_element_by_xpath('//*[@id="pnlContents"]/div[3]/div[3]/table').text
-                    if elem == "":
-                        self.emergency_refresh()
-                except:
-                    return False
-                time.sleep(2)
-            return True
-        except:
-            return False
-        
-
 
     def change_street(self): #function that changes street
         if self.current_street == self.options[-1].get_attribute('value'): #if current street is the last one on the list of streets, mode is changed to towns, because at this point we don't konow
@@ -235,7 +226,8 @@ class page_hanlder():
                     self.change_selector()
 
     def emergency_refresh(self): #function that refreshes page after failure and sets it to the last remembered state 
-        las_number_copy = self.last_number
+        # las_number_copy = self.last_number
+        self.progress_block = self.web_driver.find_element_by_xpath('//*[@id="divProgressIcon"]')        
         current_municipility_copy = self.current_municipility
         current_town_copy = self.current_town
         current_street_copy = self.current_street
@@ -279,9 +271,16 @@ class page_hanlder():
             print('result[0] is ', result[0], 'last number wil be ', self.last_number)
             while int(result[0]) < int(self.last_number):
                 try:
+                    if self.wait_for_progress():
+                        continue
+                except Exception:
+                    self.progress_block = self.web_driver.find_element_by_xpath('//*[@id="divProgressIcon"]')
+                    print(Exception)
+                    continue
+                try:
                     print('current number ', result[0])
                     self.next_page()
-                    time.sleep(1)
+                    # time.sleep(1)
                     current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
                     result = current_number.split('/')
                 except Exception:
@@ -418,6 +417,8 @@ if __name__ == '__main__':
     iteration_counter = 0
     i = 0
     while pageHandler.working_switch:
+        if pageHandler.wait_for_progress():
+            continue
         try:
             if pageHandler.empty_page():
                 time.sleep(1)
@@ -435,10 +436,13 @@ if __name__ == '__main__':
             else:
                 dataHandler.making_item()
                 pageHandler.check_status()
+                while pageHandler.wait_for_progress():
+                    time.sleep(0.2)
+                    continue
                 iteration_counter = 0
         except KeyboardInterrupt:
             exit_programme(dataHandler, driver)
         except Exception as ex:
             print(ex)
             continue
-    exit_programme(dataHandler, driver)
+    exit_programme(dataHandler, driver )
