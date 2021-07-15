@@ -81,15 +81,36 @@ class page_hanlder():
         else:
             self.current_street = self.options[0].get_attribute('value')
     
+    def clone_parameters(self):
+        list_of_towns_copy = self.list_of_towns
+        towns_options_copy = list_of_towns_copy.options
+        current_town_copy = self.current_town
+        current_street_copy = self.current_street
+        list_of_streets_copy = self.options
+        street_options_copy = list_of_streets_copy.options
+        street_counter_copy = self.counter
+        towns_counter_copy = self.town_counter
+        copies = [list_of_towns_copy, towns_options_copy, current_town_copy, current_street_copy, street_options_copy, street_counter_copy, towns_counter_copy]
+        return copies
+
     def get_towns_lists(self): #function that gets all the towns in a municipility. It is called after every municipility change
+            copies = self.clone_parameters()
             self.list_of_towns = Select(self.web_driver.find_element_by_xpath('//*[@id="selMiejscowosc"]'))
             self.towns_options = self.list_of_towns.options
             # self.town_counter = 1 #counter is set to one, because position 0 is 'rozwiń'
+            wait_iter = 0
             while len(self.towns_options) == 0: #mechanism that waits for towns list to load
+                if wait_iter == 20:
+                    self.current_town, self.current_street, self.counter, self.town_counter = copies[2], copies[3], copies[5], copies[-1]
+                    self.emergency_refresh()
+                    break
                 print('czekam na listę miast')
                 time.sleep(0.3)
                 self.towns_options = self.list_of_towns.options
-            self.current_town = self.towns_options[self.town_counter].get_attribute('value') #current town is set to first town in the list
+                wait_iter += 1
+            else:
+                del(copies)
+                self.current_town = self.towns_options[self.town_counter].get_attribute('value') #current town is set to first town in the list
 
     def empty_page(self): #function that checks if page is empty and has no data in it 
         try:
@@ -146,10 +167,10 @@ class page_hanlder():
             return True
 
     def change_town(self):
-        if self.current_town == self.towns_options[-1].get_attribute('value') and len(self.towns_options) != 2:
-            print('ostatnie miasto', self.towns_options[-1].text)
+        if self.current_town == self.towns_options[-1].get_attribute('value') and len (self.towns_options) != 2: #condition that checks if current city is the last one on the list and if the list contains more than just one position
+            print('last town', self.towns_options[-1].text)
             self.change_municipility()
-        elif self.current_town == self.towns_options[-1].get_attribute('value') and len(self.towns_options) == 2:
+        elif self.current_town == self.towns_options[-1].get_attribute('value') and len(self.towns_options) == 2: #condition that checks if current city is the only one in the municipility 
             print('wchodzę w elif')
             street_copy = self.options[1].text 
             self.get_street_list()
@@ -161,7 +182,7 @@ class page_hanlder():
                 self.counter = 1
             
             self.change_street()
-        else:
+        else: 
             search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
             wanted_town = self.towns_options[self.town_counter + 1].get_attribute('value')
             self.list_of_towns.select_by_value(wanted_town)
@@ -173,12 +194,12 @@ class page_hanlder():
             self.counter = 1
             search_button.click()
             if not self.search_for_popup():
-                print('wszedłem w pierwszego if')
+                print('town has to be read by street')
                 self.mode = 's'
                 self.counter = 1
                 self.change_street()
             
-    def change_selector(self):
+    def change_selector(self): #function that checks what should be changed town or street
         if self.mode == 's':
             print('Next Street')
             self.change_street()
@@ -186,7 +207,7 @@ class page_hanlder():
             print('Next Town')
             self.change_town()
 
-    def next_page(self):
+    def next_page(self): #if there are more that one page in certain town/city this function changes page to the next one 
         next_page = self.web_driver.find_element_by_xpath('//*[@id="btnNextPage"]')
         next_page.click()
         time.sleep(0.5)
