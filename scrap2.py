@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, UnexpectedAlertPresentException
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchWindowException, NoAlertPresentException
 # from selenium.webdriver.support.events import EventFiringWebDriver, AbstractEventListener
 import time
@@ -366,8 +366,11 @@ class data_handler():
         self.current_output_number += 1
         self.companies_list.clear()
 
+    def change_output_number(self, output):
+        self.current_output_number = output
+
 class system_handler():
-    def __init__(self, county, data_hanlder):
+    def __init__(self, county, data_handler):
         self.current_county_name = county
         self.current_path = os.getcwd()
         self.data_handler = data_handler
@@ -380,7 +383,7 @@ class system_handler():
         for name in names:
             numbers.append(int(re.findall(r'\d+', name)[0]))
         self.output = max(numbers) + 1
-        self.data_handler.change_output_number(self, output)
+        self.data_handler.change_output_number(self.output)
         print('current outupt number = ', self.data_handler.current_output_number)
 
     def make_new_directory(self):
@@ -419,6 +422,7 @@ if __name__ == '__main__':
     while pageHandler.working_switch:
         if pageHandler.wait_for_progress():
             continue
+        pageHandler.search_for_popup()
         try:
             if pageHandler.empty_page():
                 time.sleep(1)
