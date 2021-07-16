@@ -242,6 +242,7 @@ class page_hanlder():
             #number of pages displayed so far and number of all the pages on the current street/town 
             result = element.split('/')
             if len(result) == 1: #if lenght of array with numbers equals 1 it means, that there is only one page
+                self.last_number = -1
                 self.goal_number = 0
                 self.change_selector()
             else:
@@ -261,6 +262,7 @@ class page_hanlder():
                         result = element.split('/')
 
                 else: #if first number equals the second one street/town is changed 
+                    self.last_number = -1
                     self.goal_number = 0
                     self.change_selector()
 

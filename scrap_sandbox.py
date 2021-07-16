@@ -36,11 +36,9 @@ def main():
     i = 0
     # search_for_progress(driver)
     page.check_status()
-    time.sleep(1)
     page.check_status()
-    time.sleep(0.4)
-    print('ściągam listę ulic')
-    page.get_street_list_copy()
+    page.emergency_refresh()
+    page.check_status()
 
 
 if __name__ == '__main__':
