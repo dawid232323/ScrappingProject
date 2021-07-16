@@ -35,11 +35,13 @@ def main():
     data = scrap2.data_handler(page, driver, state)
     i = 0
     # search_for_progress(driver)
-    page.check_status()
-    page.check_status()
-    page.emergency_refresh()
-    page.check_status()
-
+    import re, os 
+    names = os.listdir('/Users/dawidpylak/Documents/Projekty Xcode i Inne/Scrapping/makowski')
+    numbers = []
+    for name in names:
+        print(name)
+        word = re.findall(r'\d+', name)
+        print(word)
 
 if __name__ == '__main__':
     main()

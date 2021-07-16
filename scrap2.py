@@ -210,7 +210,11 @@ class page_hanlder():
             self.get_street_list()
             print('pobrałem listę ulic po zmianie miasta')
             self.counter = 1
-            search_button.click()
+            try:
+                search_button.click()
+            except:
+                search_button = self.web_driver.find_element_by_xpath('//*[@id="btnSzukajPoAdresie"]')
+                search_button.click()
             if not self.search_for_popup():
                 print('town has to be read by street')
                 self.mode = 's'
@@ -432,7 +436,8 @@ class system_handler():
         names = os.listdir()
         numbers = []
         for name in names:
-            numbers.append(int(re.findall(r'\d+', name)[0]))
+            if not name.startswith('.'):
+                numbers.append(int(re.findall(r'\d+', name)[0]))
         self.output = max(numbers) + 1
         self.data_handler.change_output_number(self.output)
         print('current outupt number = ', self.data_handler.current_output_number)
