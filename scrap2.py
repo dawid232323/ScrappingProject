@@ -9,6 +9,7 @@ import pandas as pd
 import xlsxwriter
 import os 
 import sys
+import traceback 
 # from scrap_sandbox import Listener
 
 working_switch = True
@@ -299,12 +300,15 @@ class page_hanlder():
         self.town_counter = counters_copy[1]
         self.municipility_counter = counters_copy[2] #getting new lists and setting counters 
         print('jestem przed kliknięciem przycisku')
-        search_button.click()
-        print('kliknąłem przycisk')
-        time.sleep(2)
-        if not self.search_for_popup():
-            self.mode = 's'
+        if self.mode == 't':
+            search_button.click()
+            print('kliknąłem przycisk')
+            self.search_for_popup()
+            time.sleep(2)
+        else: 
             self.list_of_streets.select_by_value(current_street_copy)
+            search_button.click()
+            time.sleep(1)
             search_button.click()
         time.sleep(0.5)
         print('będę zmieniał strony')
@@ -318,7 +322,7 @@ class page_hanlder():
                         continue
                 except Exception:
                     self.progress_block = self.web_driver.find_element_by_xpath('//*[@id="divProgressIcon"]')
-                    print(Exception)
+                    traceback.print_exc()
                     continue
                 try:
                     print('current number ', result[0])
@@ -493,7 +497,7 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             exit_programme(dataHandler, driver)
         except Exception as ex:
-            print(ex)
+            traceback.print_exc()
             exit_programme(dataHandler, driver)
             continue
     exit_programme(dataHandler, driver )
