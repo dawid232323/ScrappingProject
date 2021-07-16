@@ -86,7 +86,7 @@ class page_hanlder():
         towns_options_copy = list_of_towns_copy.options
         current_town_copy = self.current_town
         current_street_copy = self.current_street
-        list_of_streets_copy = self.options
+        list_of_streets_copy = self.list_of_streets
         street_options_copy = list_of_streets_copy.options
         street_counter_copy = self.counter
         towns_counter_copy = self.town_counter
