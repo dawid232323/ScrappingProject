@@ -58,10 +58,17 @@ class page_hanlder():
         self.working_switch = True
 
     def wait_for_progress(self): #method that checks if progress bar is displayed
-        if self.progress_block.is_displayed():
-            return True
-        else:
-            return False
+        try:
+            if self.progress_block.is_displayed():
+                return True
+            else:
+                return False
+        except:
+            self.progress_block = self.web_driver.find_element_by_xpath('//*[@id="divProgressIcon"]')
+            if self.progress_block.is_displayed():
+                return True
+            else:
+                return False
 
     def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
@@ -276,16 +283,20 @@ class page_hanlder():
         self.get_municipilities_list() 
         self.get_towns_lists()
         self.get_street_list()
+        print('pobrałem wszystkie listy')
         self.counter = counters_copy[0]
         self.town_counter = counters_copy[1]
         self.municipility_counter = counters_copy[2] #getting new lists and setting counters 
+        print('jestem przed kliknięciem przycisku')
         search_button.click()
+        print('kliknąłem przycisk')
         time.sleep(2)
         if not self.search_for_popup():
             self.mode = 's'
             self.list_of_streets.select_by_value(current_street_copy)
             search_button.click()
         time.sleep(0.5)
+        print('będę zmieniał strony')
         if int(self.last_number) > -1: 
             current_number = self.web_driver.find_element_by_xpath('//*[@id="spanPageIndex"]').text
             result = current_number.split('/')
@@ -360,11 +371,13 @@ class data_handler():
                         self.write_file()
                         self.page_handler.emergency_refresh()
                         self.refresh_control = 0
+                        i = 1
                         continue
                     elif self.page_handler.empty_page() == False and regon == '' and self.refresh_control == 1:
                         print('emergency refresh after refresh control', self.page_handler.last_number, 'goal number = ', self.page_handler.goal_number)
                         self.write_file()
                         self.page_handler.emergency_refresh()
+                        i = 1
                         self.refresh_control = 0
                         continue
                     elif regon != '':

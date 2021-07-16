@@ -33,10 +33,16 @@ def main():
     page = scrap2.page_hanlder(driver, 's')
     state = page.get_county_name()
     data = scrap2.data_handler(page, driver, state)
-    system = scrap2.system_handler('toruński', data)
+    i = 0
     # search_for_progress(driver)
     page.check_status()
     page.emergency_refresh()
+    page.search_for_popup()
+    page.check_status()
+    page.search_for_popup()
+    if page.wait_for_progress():
+        time.sleep(1)
+    page.check_status()
 
 
 if __name__ == '__main__':
