@@ -30,19 +30,17 @@ def main():
     driver = webdriver.Chrome()
     driver.get(url)
     t = input('start')
-    page = scrap2.page_hanlder(driver, 's')
+    page = scrap2.page_hanlder(driver, 't')
     state = page.get_county_name()
     data = scrap2.data_handler(page, driver, state)
     i = 0
     # search_for_progress(driver)
     page.check_status()
-    page.emergency_refresh()
-    page.search_for_popup()
+    time.sleep(1)
     page.check_status()
-    page.search_for_popup()
-    if page.wait_for_progress():
-        time.sleep(1)
-    page.check_status()
+    time.sleep(0.4)
+    print('ściągam listę ulic')
+    page.get_street_list_copy()
 
 
 if __name__ == '__main__':

@@ -19,9 +19,13 @@ def exit_programme(dataHandler, driver):
     driver.close()
     print('bye bye')
 
+class colors:
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    WARNING = '\033[93m'
 
 class page_hanlder():
-    mode  = str
+    mode = str
     counter = 1
     town_counter = 1
     municipility_counter = 1
@@ -57,7 +61,7 @@ class page_hanlder():
         self.last_number = -1
         self.working_switch = True
 
-    def wait_for_progress(self): #method that checks if progress bar is displayed
+    def wait_for_progress(self):  # method that checks if progress bar is displayed
         try:
             if self.progress_block.is_displayed():
                 return True
@@ -70,20 +74,26 @@ class page_hanlder():
             else:
                 return False
 
-    def get_municipilities_list(self): #function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
+    def get_municipilities_list(self):  # function that changes municipility and gets all states and counties during initialozation. States and counties are used during the refresh
         self.list_of_municipilities = Select(self.web_driver.find_element_by_xpath('//*[@id="selGmina"]'))
         self.municipilities_options = self.list_of_municipilities.options
         self.current_municipility = self.municipilities_options[self.municipility_counter].get_attribute("value") #current municipility is the one on the counter's position. Counter is never changed after init at tths moment
     
-    def get_street_list(self): #function that gets all the streets. It is called whenever the town is changed
+    def get_street_list(self):  # function that gets all the streets. It is called whenever the town is changed
         self.list_of_streets = Select(self.web_driver.find_element_by_xpath('//*[@id="selUlica"]'))
         self.options = self.list_of_streets.options
-        self.counter = 1 #counter is set to one, because 'rozwiń' is on the 0 position
-        while len(self.options) == 0: #mechanism that waits for the streets list to load
+        self.counter = 1  # counter is set to one, because 'rozwiń' is on the 0 position
+        iterator = 0
+        while len(self.options) == 0:  # mechanism that waits for the streets list to load
+            if iterator == 20:
+                print(f"{colors.FAIL} iterator equals ", iterator, f"{colors.ENDC}")
+                self.emergency_refresh()
+                break
             print("czekam na listę ulic")
             time.sleep(0.3)
             self.options = self.list_of_streets.options
-        if len(self.options) > 1: #current street is dependent to list size. If size is greater than one it means that there are streets in the town
+            iterator += 1
+        if len(self.options) > 1:  # current street is dependent to list size. If size is greater than one it means that there are streets in the town
             self.current_street = self.options[self.counter].get_attribute('value')
         else:
             self.current_street = self.options[0].get_attribute('value')
@@ -101,14 +111,14 @@ class page_hanlder():
         return copies
 
     def get_towns_lists(self): #function that gets all the towns in a municipility. It is called after every municipility change
-            copies = self.clone_parameters()
+            # copies = self.clone_parameters()
             self.list_of_towns = Select(self.web_driver.find_element_by_xpath('//*[@id="selMiejscowosc"]'))
             self.towns_options = self.list_of_towns.options
             # self.town_counter = 1 #counter is set to one, because position 0 is 'rozwiń'
             wait_iter = 0
             while len(self.towns_options) == 0: #mechanism that waits for towns list to load
                 if wait_iter == 20:
-                    self.current_town, self.current_street, self.counter, self.town_counter = copies[2], copies[3], copies[5], copies[-1]
+                    # self.current_town, self.current_street, self.counter, self.town_counter = copies[2], copies[3], copies[5], copies[-1]
                     self.emergency_refresh()
                     break
                 print('czekam na listę miast')
@@ -116,7 +126,7 @@ class page_hanlder():
                 self.towns_options = self.list_of_towns.options
                 wait_iter += 1
             else:
-                del(copies)
+                # del(copies)
                 self.current_town = self.towns_options[self.town_counter].get_attribute('value') #current town is set to first town in the list
 
     def empty_page(self): #function that checks if page is empty and has no data in it 
@@ -219,7 +229,7 @@ class page_hanlder():
         next_page.click()
         time.sleep(0.5)
 
-    def check_status(self): #function that chcecks the status of the page 
+    def check_status(self): #function that checks the status of the page 
         
         print('Checking status')
         if self.empty_page(): #if page has no records change selector is called
@@ -258,7 +268,8 @@ class page_hanlder():
         self.progress_block = self.web_driver.find_element_by_xpath('//*[@id="divProgressIcon"]')        
         current_municipility_copy = self.current_municipility
         current_town_copy = self.current_town
-        current_street_copy = self.current_street
+        if self.mode == 's':
+            current_street_copy = self.current_street
         current_state_copy = self.current_state
         current_county_copy = self.current_county
         counters_copy = [self.counter, self.town_counter, self.municipility_counter] #copying all parameters
@@ -442,6 +453,7 @@ class system_handler():
 if __name__ == '__main__':
     url = 'https://wyszukiwarkaregon.stat.gov.pl/appBIR/index.aspx'
     driver = webdriver.Chrome()
+    # driver = webdriver.Chrome(executable_path='C:\\Users\\dawpy\\Documents\\Scrapping\\chromedriver.exe')
     driver.get(url)
     mode = input('Type s for streets t for towns ')
     while mode not in ('s', 't'):
@@ -482,5 +494,6 @@ if __name__ == '__main__':
             exit_programme(dataHandler, driver)
         except Exception as ex:
             print(ex)
+            exit_programme(dataHandler, driver)
             continue
     exit_programme(dataHandler, driver )
