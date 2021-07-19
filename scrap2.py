@@ -58,7 +58,7 @@ class page_hanlder():
             self.current_street = self.options[self.counter]
         else:
             self.counter = 1
-        self.goal_number = 0
+        self.goal_number = -1
         self.last_number = -1
         self.working_switch = True
 
@@ -238,7 +238,7 @@ class page_hanlder():
         
         print('Checking status')
         if self.empty_page(): #if page has no records change selector is called
-            self.goal_number = 0
+            self.goal_number = -1
             self.change_selector()
             time.sleep(1) 
         else:
@@ -247,7 +247,7 @@ class page_hanlder():
             result = element.split('/')
             if len(result) == 1: #if lenght of array with numbers equals 1 it means, that there is only one page
                 self.last_number = -1
-                self.goal_number = 0
+                self.goal_number = -1
                 self.change_selector()
             else:
                 self.goal_number = int(result[1])
@@ -267,7 +267,7 @@ class page_hanlder():
 
                 else: #if first number equals the second one street/town is changed 
                     self.last_number = -1
-                    self.goal_number = 0
+                    self.goal_number = -1
                     self.change_selector()
 
     def emergency_refresh(self): #function that refreshes page after failure and sets it to the last remembered state 
