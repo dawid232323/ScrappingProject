@@ -503,6 +503,11 @@ if __name__ == '__main__':
                 iteration_counter = 0
         except KeyboardInterrupt:
             exit_programme(dataHandler, driver)
+        except UnexpectedAlertPresentException as ex:
+            print(ex)
+            pageHandler.search_for_popup()
+            dataHandler.making_item()
+            continue
         except Exception as ex:
             traceback.print_exc()
             exit_programme(dataHandler, driver)
