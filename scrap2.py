@@ -9,7 +9,8 @@ import pandas as pd
 import xlsxwriter
 import os 
 import sys
-import traceback 
+import traceback
+import csv 
 # from scrap_sandbox import Listener
 
 working_switch = True
@@ -19,6 +20,31 @@ def exit_programme(dataHandler, driver):
     dataHandler.write_file()
     driver.close()
     print('bye bye')
+
+class file_name_not_on_the_list_Exception(Exception):
+    def __init__(self):
+        self.message = 'file_name not on the list'
+        super().__init__(self.message)
+
+
+class county_list_file_handler():
+    def __init__(self, state, county):
+        self.file_name = 'county_list.csv'
+        self.csv_file = open(self.file_name)
+        self.wanted_state = state
+        self.wanted_county = county
+        self.file_name = None
+    def search_rows(self):
+        csv_reader = csv.reader(self.csv_file, delimiter=';')
+        for row in csv_reader:
+            if row[1] == self.wanted_state and row[2] == self.wanted_county:
+                self.file_name = row[3]
+                break
+        if self.file_name == None:
+            raise file_name_not_on_the_list_Exception()
+    def __str__(self):
+        return self.file_name
+
 
 class colors:
     FAIL = '\033[91m'
@@ -344,6 +370,9 @@ class page_hanlder():
     def get_county_name(self):
         return self.counties_list.first_selected_option.text
     
+    def get_state_name(self):
+        return self.states_list.first_selected_option.text
+    
     
 
 class data_handler():
@@ -471,8 +500,12 @@ if __name__ == '__main__':
         mode = input('Type s for streets t for towns ')
     pageHandler = page_hanlder(driver, mode)
     county_name = pageHandler.get_county_name()
+    state_name = pageHandler.get_state_name()
     dataHandler = data_handler(pageHandler, driver, county_name)
-    system_handler = system_handler(county_name, dataHandler)
+    fileHandler = county_list_file_handler(state_name, county_name)
+    fileHandler.search_rows()
+    file_name = str(fileHandler)
+    system_handler = system_handler(file_name, dataHandler)
     system_handler.make_new_directory()
     iteration_counter = 0
     i = 0
