@@ -30,16 +30,19 @@ class file_name_not_on_the_list_Exception(Exception):
 class county_list_file_handler():
     def __init__(self, state, county):
         self.file_name = 'county_list.csv'
-        self.csv_file = open(self.file_name)
+        self.csv_file = open(self.file_name, encoding='UTF-8')
         self.wanted_state = state
         self.wanted_county = county
         self.file_name = None
     def search_rows(self):
         csv_reader = csv.reader(self.csv_file, delimiter=';')
         for row in csv_reader:
-            if row[1] == self.wanted_state and row[2] == self.wanted_county:
-                self.file_name = row[3]
-                break
+            try:
+                if row[1] == self.wanted_state and row[2] == self.wanted_county:
+                    self.file_name = row[3]
+                    break
+            except:
+                continue
         if self.file_name == None:
             raise file_name_not_on_the_list_Exception()
     def __str__(self):
