@@ -161,7 +161,7 @@ class Result_Arrays():
         api = REGONAPI('https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc')
         api.login('c5edf702474f47e78ad5')
         for row in self.file.iterrows():
-            if counter < 10:
+            if counter < 2500:
                 try:
                     self.raport_type(row[1], api)
                     counter += 1  
