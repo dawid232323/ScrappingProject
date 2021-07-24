@@ -17,10 +17,11 @@ class file_handler():
     def __init__(self):
         self.input_name = 'temp'
         self.output_name = "temp.xlsx"
+        self.lines = None
 
     def open_file(self):
         self.input_name = self.output_name + '.xlsx'
-        file = pd.read_excel(self.input_name, index_col=0, dtype={'Regon':str, 'Typ':str, 'Nazwa':str,
+        file = pd.read_excel(self.input_name, dtype={'regon':str, 'type':str, 'name':str,
         'Województwo':str, 'Powiat': str, 'Gmina':str, 'Kod Pocztowy': str, 'Miasto': str, 'Ulica':str,
         'Informacja o usuniętym wpisie':str})
         # print(file)
@@ -28,14 +29,14 @@ class file_handler():
     
     def open_list_file(self):
         ls_file = open("list_of_counties.txt", 'r' , encoding='UTF-8')
-        lines = ls_file.readlines()
+        self.lines = ls_file.readlines()
         # print(lines)
-        self.output_name = re.sub('.xlsx', '', lines[0].rstrip('\n'))
+        self.output_name = re.sub('.xlsx', '', self.lines[0].rstrip('\n'))
         print('output name is ', self.output_name)
         ls_file.close()
         ls_file = open("list_of_counties.txt", 'w' , encoding='UTF-8')
         ls_file.truncate()
-        ls_file.writelines(lines[1:])
+        ls_file.writelines(self.lines[1:])
         ls_file.close()
     
     
@@ -140,18 +141,18 @@ class Result_Arrays():
         self.control_number = 1
 
     def raport_type(self, argument, api):
-        if argument['Typ'] == 'P':
-            self.pkd_raport(api, self.pkd_P_result, argument['Regon'], raport_type['P'][1])    
-            self.common_raport(api, argument['Regon'], self.common_P_result, raport_type['P'][0])
-        elif argument['Typ'] == 'F':
-            self.pkd_raport(api, self.pkd_F_result, argument['Regon'], raport_type['F'][1])    
-            self.common_raport(api, argument['Regon'], self.common_F_result, raport_type['F'][0])
-        elif argument['Typ'] == 'LF':
-            self.pkd_raport(api, self.pkd_LF_result, argument['Regon'], raport_type['LF'][1])    
-            self.common_raport(api, argument['Regon'], self.common_LF_result, raport_type['LF'][0])
-        elif argument['Typ'] == 'LP':
-            self.pkd_raport(api, self.pkd_LP_result, argument['Regon'], raport_type['LP'][1])    
-            self.common_raport(api, argument['Regon'], self.common_LP_result, raport_type['LP'][0])
+        if argument['type'] == 'P':
+            self.pkd_raport(api, self.pkd_P_result, argument['regon'], raport_type['P'][1])    
+            self.common_raport(api, argument['regon'], self.common_P_result, raport_type['P'][0])
+        elif argument['type'] == 'F':
+            self.pkd_raport(api, self.pkd_F_result, argument['regon'], raport_type['F'][1])    
+            self.common_raport(api, argument['regon'], self.common_F_result, raport_type['F'][0])
+        elif argument['type'] == 'LF':
+            self.pkd_raport(api, self.pkd_LF_result, argument['regon'], raport_type['LF'][1])    
+            self.common_raport(api, argument['regon'], self.common_LF_result, raport_type['LF'][0])
+        elif argument['type'] == 'LP':
+            self.pkd_raport(api, self.pkd_LP_result, argument['regon'], raport_type['LP'][1])    
+            self.common_raport(api, argument['regon'], self.common_LP_result, raport_type['LP'][0])
         else:
             print('type not found')
 
@@ -161,11 +162,11 @@ class Result_Arrays():
         api = REGONAPI('https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc')
         api.login('c5edf702474f47e78ad5')
         for row in self.file.iterrows():
-            if counter < 2500:
+            if counter < 10:
                 try:
                     self.raport_type(row[1], api)
                     counter += 1  
-                    print('Done ', row[1]['Regon'] ,row[1]['Nazwa'])
+                    print('Done ', row[1]['regon'] ,row[1]['name'])
                 except KeyboardInterrupt:
                     self.emergency_break()
                     exit()
