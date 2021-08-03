@@ -36,12 +36,13 @@ class Result_Arrays():
         writer.save()
         writer = pd.ExcelWriter('F_deleted.xlsx', engine='xlsxwriter')
         writer.save()
+        print('Created files')
     
     def get_branch(self, regon, raport_number):
         try:
             root = self.api.full_report(regon, raport_number)
         except:
-            print("exception occured")
+            print("Exception occured")
         position = {}
         for element in root.getchildren():
             position[element.tag] = element.text
@@ -56,6 +57,7 @@ class Result_Arrays():
         self.rest_company.clear()
         self.make_spreadshit(self.deleted_company, 'F_deleted.xlsx')
         self.deleted_company.clear()
+        print('Pile written')
 
     def make_spreadshit(self, result, name):
         df = pd.DataFrame(result)
@@ -81,6 +83,7 @@ class Result_Arrays():
                     self.rest_company.append(self.get_branch(row[0], self.raport_types[2]))
                 if row[20] == '1':
                     self.deleted_company.append(self.get_branch(row[0], self.raport_types[-1]))
+                print('Done', row[0])
                 counter += 1
             else:
                 self.breake_for_writing()
