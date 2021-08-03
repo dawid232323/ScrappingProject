@@ -28,15 +28,15 @@ class Result_Arrays():
     
     def create_environment(self):
         os.chdir('/home/dawid232323/Documents/F raports/')
-        writer = pd.ExcelWriter('F_ceidg.xlsx', engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter('F_agriculture.xlsx', engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter('F_rest.xlsx', engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter('F_deleted.xlsx', engine='xlsxwriter')
-        writer.save()
-        print('Created files')
+        # writer = pd.ExcelWriter('F_ceidg.xlsx', engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter('F_agriculture.xlsx', engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter('F_rest.xlsx', engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter('F_deleted.xlsx', engine='xlsxwriter')
+        # writer.save()
+        # print('Created files')
     
     def get_branch(self, regon, raport_number):
         try:
@@ -49,27 +49,24 @@ class Result_Arrays():
         return position
 
     def breake_for_writing(self):
-        self.make_spreadshit(self.ceidg_company, 'F_ceidg.xlsx')
+        self.make_spreadshit(self.ceidg_company, 'F_ceidg.csv')
         self.ceidg_company.clear()
-        self.make_spreadshit(self.agricultural_company, 'F_agriculture.xlsx')
+        self.make_spreadshit(self.agricultural_company, 'F_agriculture.csv')
         self.agricultural_company.clear()
-        self.make_spreadshit(self.rest_company, 'F_rest.xlsx')
+        self.make_spreadshit(self.rest_company, 'F_rest.csv')
         self.rest_company.clear()
-        self.make_spreadshit(self.deleted_company, 'F_deleted.xlsx')
+        self.make_spreadshit(self.deleted_company, 'F_deleted.csv')
         self.deleted_company.clear()
-        print('Pile written')
+        print('File written')
+        self.control_number = 1
 
     def make_spreadshit(self, result, name):
         df = pd.DataFrame(result)
-        writer = pd.ExcelWriter(name, engine='openpyxl', mode='a')
-        writer.book = load_workbook(name)
-        writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
-        reader = pd.read_excel(name)
         if self.control_number == 0:
-            df.to_excel(writer, index=False, header=True, startrow=len(reader) + 1)
+            df.to_csv(name, mode='a', header=True, index=False, sep=';')
         else:
-            df.to_excel(writer, index=False, header=False, startrow=len(reader) + 1)
-        writer.close()
+            df.to_csv(name, mode='a', header=False, index=False, sep=';')
+        
 
     def make_raport(self):
         counter = 0
@@ -86,9 +83,12 @@ class Result_Arrays():
                 print('Done', row[0])
                 counter += 1
             else:
+                print('starting else')
+                counter = 0
                 self.breake_for_writing()
                 self.api = REGONAPI('https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc')
                 self.api.login('c5edf702474f47e78ad5') 
+                print('zeroed counter')
         self.breake_for_writing()     
 
 def __main__():
@@ -96,10 +96,10 @@ def __main__():
     arrays.create_environment()
     try:
         arrays.make_raport()
-    except KeyboardInterrupt:
-        print('keyboard interrupt')
+    except Exception:
+        # print('keyboard interrupt')
         arrays.breake_for_writing()
-        exit()
+        exit()  
 
 if __name__ == '__main__':
-    __main__()
+    __main__() 
