@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 
 class file_handler():
     def __init__(self):
-        self.fhand = open('/Users/dawidpylak/Documents/Data/F_test/test.csv', encoding="utf8", mode='r')
+        self.fhand = open('/home/dawid232323/Documents/F raports/common_f.csv', encoding="utf8", mode='r')
         self.csv_reader = csv.reader(self.fhand, delimiter=';')
     def get_file(self):
         names = next(self.csv_reader)
@@ -27,7 +27,7 @@ class Result_Arrays():
         self.control_number = 0
     
     def create_environment(self):
-        os.chdir('/Users/dawidpylak/Documents/Data/F_test/')
+        os.chdir('/home/dawid232323/Documents/F raports/')
         writer = pd.ExcelWriter('F_ceidg.xlsx', engine='xlsxwriter')
         writer.save()
         writer = pd.ExcelWriter('F_agriculture.xlsx', engine='xlsxwriter')
@@ -91,7 +91,12 @@ class Result_Arrays():
 def __main__():
     arrays = Result_Arrays()
     arrays.create_environment()
-    arrays.make_raport()
+    try:
+        arrays.make_raport()
+    except KeyboardInterrupt:
+        print('keyboard interrupt')
+        arrays.breake_for_writing()
+        exit()
 
 if __name__ == '__main__':
     __main__()
