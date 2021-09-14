@@ -111,15 +111,24 @@ class Result_Arrays():
 
     def make_spreedsheet(self, result, name):
         df = pd.DataFrame(result)
-        writer = pd.ExcelWriter(name, engine='openpyxl', mode='a')
-        writer.book = load_workbook(name)
-        writer.sheets = dict((ws.title, ws) for ws in writer.book.worksheets)
-        reader = pd.read_excel(name)
         if self.control_number == 0:
-            df.to_excel(writer, index=False, header=True, startrow=len(reader) + 1)
+            df.to_csv(name, mode='a', sep=';', index=False, header=True, encoding='UTF-8')
         else:
-            df.to_excel(writer, index=False, header=False, startrow=len(reader) + 1)
-        writer.close()
+            df.to_csv(name, mode='a', sep=';', index=False, header=False, encoding='UTF-8')
+        
+    def convert_to_excel(self):
+        file_list = os.listdir('.')
+        for file_name in file_list:
+            print('converting ', file_name)
+            read = pd.read_csv(file_name)
+            file_name = file_name.replace('.csv', '.xlsx')
+            # writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
+            # writer.save()
+            read.to_excel(file_name, header=True, index=False)
+    def delete_csv(self):
+        for file_name in os.listdir():
+            if file_name.endswith('.csv'):
+                os.remove(file_name)
 
     def emergency_break(self):
         self.make_spreedsheet(self.common_P_result, self.common_P_name)
@@ -196,6 +205,8 @@ if __name__ == '__main__':
     arrays = Result_Arrays(file_handler)
     arrays.create_environment()
     arrays.get_raport()
+    arrays.convert_to_excel()
+    arrays.delete_csv()
 
 
 
