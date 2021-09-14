@@ -20,7 +20,7 @@ class file_handler():
         self.lines = None
 
     def open_file(self):
-        self.input_name = self.output_name + '.xlsx'
+        self.input_name = '/home/dawid232323/Documents/PKD/to_do/'+ self.output_name + '.xlsx'
         file = pd.read_excel(self.input_name, dtype={'regon':str, 'type':str, 'name':str,
         'Województwo':str, 'Powiat': str, 'Gmina':str, 'Kod Pocztowy': str, 'Miasto': str, 'Ulica':str,
         'Informacja o usuniętym wpisie':str})
@@ -66,24 +66,24 @@ class Result_Arrays():
         self.control_number = 0
 
     def create_environment(self):
-        os.mkdir(f'/Users/dawidpylak/Dysk Google/REGON/2_comp_general/{self.file_handler.output_name}')
-        os.chdir(f'/Users/dawidpylak/Dysk Google/REGON/2_comp_general/{self.file_handler.output_name}')
-        writer = pd.ExcelWriter(self.common_P_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.common_F_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.common_LP_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.common_LF_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.pkd_P_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.pkd_F_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.pkd_LP_name, engine='xlsxwriter')
-        writer.save()
-        writer = pd.ExcelWriter(self.pkd_LF_name, engine='xlsxwriter')
-        writer.save()
+        os.mkdir(f'/home/dawid232323/Documents/PKD/done/{self.file_handler.output_name}')
+        os.chdir(f'/home/dawid232323/Documents/PKD/done/{self.file_handler.output_name}')
+        # writer = pd.ExcelWriter(self.common_P_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.common_F_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.common_LP_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.common_LF_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.pkd_P_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.pkd_F_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.pkd_LP_name, engine='xlsxwriter')
+        # writer.save()
+        # writer = pd.ExcelWriter(self.pkd_LF_name, engine='xlsxwriter')
+        # writer.save()
 
     def common_raport(self, api, regon, result, cmp_type):
         try:
@@ -162,7 +162,7 @@ class Result_Arrays():
         api = REGONAPI('https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc')
         api.login('c5edf702474f47e78ad5')
         for row in self.file.iterrows():
-            if counter < 10:
+            if counter < 2500:
                 try:
                     self.raport_type(row[1], api)
                     counter += 1  
