@@ -55,14 +55,14 @@ class Result_Arrays():
         self.pkd_LF_result = []
         self.common_LP_result = []
         self.pkd_LP_result = []
-        self.common_P_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_P.xlsx'
-        self.common_F_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_F.xlsx'
-        self.common_LF_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_LF.xlsx'
-        self.common_LP_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_LP.xlsx'
-        self.pkd_F_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_F.xlsx'
-        self.pkd_P_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_P.xlsx'
-        self.pkd_LP_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_LP.xlsx'
-        self.pkd_LF_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_LF.xlsx'
+        self.common_P_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_P.csv'
+        self.common_F_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_F.csv'
+        self.common_LF_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_LF.csv'
+        self.common_LP_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_common_LP.csv'
+        self.pkd_F_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_F.csv'
+        self.pkd_P_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_P.csv'
+        self.pkd_LP_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_LP.csv'
+        self.pkd_LF_name = re.sub('.xlsx', '', self.file_handler.output_name) + '_pkd_LF.csv'
         self.control_number = 0
 
     def create_environment(self):
@@ -120,8 +120,10 @@ class Result_Arrays():
         file_list = os.listdir('.')
         for file_name in file_list:
             print('converting ', file_name)
-            read = pd.read_csv(file_name)
+            file_to_convert = open(file_name, encoding='UTF-8')
+            reader = csv.reader(file_to_convert, delimiter=';')
             file_name = file_name.replace('.csv', '.xlsx')
+            read = pd.DataFrame(reader)
             # writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
             # writer.save()
             read.to_excel(file_name, header=True, index=False)
