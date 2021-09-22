@@ -2,18 +2,18 @@ import re
 import pandas as pd
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from multipledispatch import dispatch
+
 
 class data_collector():
     def __init__(self, driver):
         self.web_driver = driver
         self.main_data = {'ID': None, 'Imie': None, 'Nazwisko': None, 'Specjalności' : None, 'Klasyfikacja': None, 'Powiązane profile': None,
         'Studia': None, 'Miejsce': None, 'Rok ukończenia': None}
-        self.employment = {'ID': None, 'Type': None, 'Position': None, 'Place': None}
+        self.employment = []
 
     def __check_presence(self, xpath: str, desired_text = 'default') -> bool:
         try:
-            elem = self.web_driver.find_element_by_xpath(xpath).text.removeprefix(' ')
+            elem = self.web_driver.find_element_by_xpath(xpath).text#.removeprefix(' ')
             if  elem == desired_text and desired_text != 'default':
                 return True
             elif desired_text == 'default':
@@ -30,9 +30,9 @@ class data_collector():
         if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/h2', 'STOPNIE I TYTUŁY'): #checking if titles and degrees are present 
             print('entering collector')
             self.__titles_collector()
-        # if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div/h2', 'ZATRUDNIENIE'): #checking if employment box is present
-        #     self.__employment_collector()
-        self.__test_function()
+        if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div/h2', 'ZATRUDNIENIE'): #checking if employment box is present
+            print('employment checked')
+            self.__employment_collector()
         print(self.main_data)
         return self.main_data
          
@@ -78,15 +78,29 @@ class data_collector():
                 else:
                     self.main_data[base_name + '_default'] = ready_key[0]
 
-    def __employment_collector(self) -> None:
-        print('in the emp collector')
+    def __employment_collector(self) -> None: 
+        employment_dict = {'ID': None, 'Type': None, 'Position': None, 'Place': None}
+        current_type = str
         types = ('AKTUALNE', 'HISTORYCZNE')
-        block = self.web_driver.find_elements_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div')
-        print(block[0].text)
+        block = self.web_driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div/section').text
+        split_block = block.split('\n')
+        print(split_block)
+        i = 0
+        while i != len(split_block) - 1: 
+            if ''.join(re.findall(r'[A-Z]{11}|[A-Z]{8}', split_block[i])) in types:
+                current_type = ''.join(re.findall(r'[A-Z]{11}|[A-Z]{8}', split_block[i]))
+                i += 1
+            else:
+                employment_dict['ID'] = self.main_data['ID']
+                employment_dict['Type'] = current_type
+                employment_dict['Position'] = split_block[i]
+                employment_dict['Place'] = split_block[i + 1]
+                i += 1 
+        print(employment_dict)
 
     def __test_function(self):
         print('testtinfg')
-        elem = self.web_driver.find_elements_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]')
+        elem = self.web_driver.find_elements_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div/h2')
         print(elem[0].text)
         
         
