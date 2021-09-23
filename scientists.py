@@ -25,16 +25,25 @@ class data_collector():
 
     def switcher(self) -> dict: 
         self.__summary_data_collector()
-        if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div/h2', 'STUDIA'): #checking if education box is present 
-            self.__education_collector() #collecting eduaction data 
-        if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/h2', 'STOPNIE I TYTUŁY'): #checking if titles and degrees are present 
-            print('entering collector')
-            self.__titles_collector()
-        if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div/h2', 'ZATRUDNIENIE'): #checking if employment box is present
-            print('employment checked')
-            self.__employment_collector()
+        headers = self.web_driver.find_elements_by_class_name('nnp-profile-section-title')
+        for item in headers:
+            rd_item = item.text
+            if rd_item == 'STUDIA':
+                self.__education_collector()
+            elif rd_item == 'STOPNIE I TYTUŁY':
+                self.__titles_collector()
+            # elif rd_item == 'ZATRUDNIENIE':
+            #     self.__employment_collector()
+        # if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div/h2', 'STUDIA'): #checking if education box is present 
+        #     self.__education_collector() #collecting eduaction data 
+        # if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/h2', 'STOPNIE I TYTUŁY'): #checking if titles and degrees are present 
+        #     print('entering collector')
+        #     self.__titles_collector()
+        # if self.__check_presence('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div/h2', 'ZATRUDNIENIE'): #checking if employment box is present
+        #     print('employment checked')
+        #     self.__employment_collector()
         print(self.main_data)
-        return self.main_data
+        # return self.main_data
          
 
     def __education_collector(self) -> None:
@@ -80,9 +89,15 @@ class data_collector():
 
     def __employment_collector(self) -> None: 
         employment_dict = {'ID': None, 'Type': None, 'Position': None, 'Place': None}
+        temp = self.web_driver.find_elements_by_class_name('nnp-tab-item-title')
+        positions = set()
+        for item in temp:
+            positions.add(item.text)
+        del(temp)
         current_type = str
         types = ('AKTUALNE', 'HISTORYCZNE')
-        block = self.web_driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div/section').text
+        block = self.web_driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div/section').text 
+        #reads whole block with employment rows, then it is converted to simple string and split by new line 
         split_block = block.split('\n')
         print(split_block)
         i = 0
@@ -90,13 +105,22 @@ class data_collector():
             if ''.join(re.findall(r'[A-Z]{11}|[A-Z]{8}', split_block[i])) in types:
                 current_type = ''.join(re.findall(r'[A-Z]{11}|[A-Z]{8}', split_block[i]))
                 i += 1
-            else:
+            elif split_block[i] in positions:
                 employment_dict['ID'] = self.main_data['ID']
                 employment_dict['Type'] = current_type
                 employment_dict['Position'] = split_block[i]
                 employment_dict['Place'] = split_block[i + 1]
                 i += 1 
-        print(employment_dict)
+            else:
+                employment_dict['ID'] = self.main_data['ID']
+                employment_dict['Type'] = current_type
+                employment_dict['Position'] = None
+                employment_dict['Place'] = split_block[i]
+                i += 1
+            if employment_dict['Place'] != None and employment_dict['ID'] != None:
+                self.employment.append(employment_dict)
+                employment_dict.clear() 
+        print(self.employment)
 
     def __test_function(self):
         print('testtinfg')
@@ -110,8 +134,9 @@ def main():
     dictionaries = []
     driver = webdriver.Chrome()
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=202533&_k=5py0p0')
-    driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
+    # driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=225261&_k=2m5mzl')
+    driver.get('https://nauka-polska.pl/#/profile/scientist?id=25983&_k=488av6')
     # driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a').click()
     start = input('start ')
     data_collector(driver).switcher()
@@ -119,3 +144,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div
+//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div
+//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div
