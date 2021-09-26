@@ -6,10 +6,10 @@ import time
 from selenium.webdriver.support.ui import Select
 
 driver = webdriver.Chrome()
-driver.get('https://nauka-polska.pl/#/profile/scientist?id=25983&_k=488av6')
+driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
 s = input('start')
-# block = driver.find_elements_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div/section/div/div[2]/div[2]/div/div/div[1]')
-temp = driver.find_elements_by_class_name('nnp-profile-section-title')
-for item in temp:
-    print(item.text)
+block = driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[5]/div/div/div').text
+split_items = block.split('\n')
+for i in range(len(split_items)):
+    print(i, ' ', split_items[i])
 driver.close()

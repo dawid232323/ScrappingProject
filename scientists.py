@@ -136,35 +136,66 @@ class data_collector():
         print(colors().OKGREEN, self.employment, colors().ENDC)
         print(colors().OKGREEN, self.functions, colors().ENDC)
 
-    def __research_collector(self):
-        jobs = ('Recenzent', 'Promotor', 'Kierownik', 'Wykonawca')
-        research_dictionary = {'res_ID':None, 'res_Job': None, 'res_Title': None, 'res_reesearchID': None, 'res_Osoby_powiązane_z_pracą': None, 'res_Instytucje_powiązane_z_pracą': None}
-        block = block = self.web_driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[%d]/div/div/div/section' % self.control_number).text 
-        split_block = block.split('\n')
-        current_job = str
-        i = 0
-        while i != len(split_block) - 1:
-            if re.sub('[\ ]*Mniej', '', split_block[i]) in jobs:
-                current_job = re.sub('[\ ]*Mniej', '', split_block[i])
+    def __research_inserter(self, job_name:str, section_number: int) -> None: #inserts research data from given section
+        row_number = 1
+        while True:
+            xpath = (f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{section_number}]/div[2]/div/div/div/div/table/tbody/tr[{row_number}]/td[2]')
+            research_dictionary = {'res_ID':None, 'res_Job': None, 'res_Title': None, 'res_reesearchID': None, 'res_Osoby_powiązane_z_pracą': None, 'res_Instytucje_powiązane_z_pracą': None}
+            if self.__check_presence(xpath):
+                block = self.web_driver.find_element_by_xpath(xpath).text
+                split_block = block.split('\n')
+                research_dictionary['res_ID'] = self.main_data['ID']
+                research_dictionary['res_Job'] = job_name
+                research_dictionary['res_Title'] = split_block[0]
+                research_dictionary['res_reesearchID'] = split_block[1]
+                research_dictionary['res_Osoby_powiązane_z_pracą'] = split_block[3]
+                research_dictionary['res_Instytucje_powiązane_z_pracą'] = split_block[5]
+                # print(colors().WARNING, 'adding dictionary ', research_dictionary, f' with section number {section_number} and row number {row_number}', colors().ENDC)
+                self.research.append(research_dictionary)
+                row_number += 1
+            else:
+                break
+
+    def __research_collector(self): #iterates through research sections and triggters __reseatch_inserter method
+        jobs = []
+        i = 1
+        while True:
+            if self.__check_presence(f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{i}]/div[1]/h4/a/span[1]'):
+                jobs.append(self.web_driver.find_element_by_xpath(f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{i}]/div[1]/h4/a/span[1]').text)
                 i += 1
             else:
-                research_dictionary['res_ID'] = self.main_data['ID']
-                research_dictionary['res_Job'] = current_job
-                research_dictionary['res_Title'] = re.findall(r'[^1-9]\ .*', split_block[i])
-                research_dictionary['res_researchID'] = split_block[i + 1]
-                research_dictionary['res_Osoby_powiązane_z_pracą'] = split_block[i + 3]
-                research_dictionary['res_Instytucje_powiązane_z_pracą'] = split_block[i + 5]
-                self.research.append(research_dictionary)
-                research_dictionary = {'res_ID':None, 'res_Job': None, 'res_Title': None, 'res_reesearchID': None, 'res_Osoby_powiązane_z_pracą': None, 'res_Instytucje_powiązane_z_pracą': None}
-                i += 4
-
-        for item in self.research:
-            print(item)
+                break
+        section_number = 1
+        for item in jobs:
+            self.__research_inserter(item, section_number)
+            section_number += 1
+        print(self.research)    
 
     def data_getter(self):
-        return self.main_data, self.employment, self.functions, self.research
+        self.switcher()
+        main_data = []
+        main_data.append(self.main_data)
+        return main_data, self.employment, self.functions, self.research
         
-        
+class document_handler():
+    def __init__(self, sex: str, web_driver) -> None:
+        self.main_name = f'main_{sex}_scientists.csv'                
+        self.research_name = f'research_{sex}_scientists.csv'
+        self.employment_name = f'employment_{sex}_scientists.csv'
+        self.functions = f'functions_{sex}_scientists.csv'
+        self.driver = web_driver
+
+    def main_writer(self) -> None:
+        data = data_collector(self.driver).data_getter()
+        main_df = pd.DataFrame(data[0])
+        emp_df = pd.DataFrame(data[1])
+        func_df = pd.DataFrame(data[2])
+        res_df = pd.DataFrame(data[3])
+        main_df.to_csv(self.main_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
+        emp_df.to_csv(self.employment_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
+        func_df.to_csv(self.functions, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
+        res_df.to_csv(self.research_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
+
 
 
 def main():
@@ -176,13 +207,11 @@ def main():
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=25983&_k=488av6')
     # driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a').click()
     start = input('start ')
-    data_collector(driver).switcher()
+    # data_collector(driver).switcher()
+    document_handler('Male', driver).main_writer()
     driver.close()
 
 if __name__ == '__main__':
     main()
 
 
-# //*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div
-# //*[@id="content"]/div/div[2]/div[1]/main/section/section/section[1]/div/div/div
-# //*[@id="content"]/div/div[2]/div[1]/main/section/section/section[3]/div/div/div
