@@ -25,7 +25,7 @@ class data_collector():
         self.research = []
         self.control_number = 1
 
-    def __check_presence(self, xpath: str, desired_text = 'default') -> bool:
+    def check_presence(self, xpath: str, desired_text = 'default') -> bool:
         try:
             elem = self.web_driver.find_element_by_xpath(xpath).text#.removeprefix(' ')
             if  elem == desired_text and desired_text != 'default':
@@ -142,7 +142,7 @@ class data_collector():
         while True:
             xpath = (f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{section_number}]/div[2]/div/div/div/div/table/tbody/tr[{row_number}]/td[2]')
             research_dictionary = {'res_ID':None, 'res_Job': None, 'res_Title': None, 'res_reesearchID': None, 'res_Osoby_powiązane_z_pracą': None, 'res_Instytucje_powiązane_z_pracą': None}
-            if self.__check_presence(xpath):
+            if self.check_presence(xpath):
                 block = self.web_driver.find_element_by_xpath(xpath).text
                 split_block = block.split('\n')
                 research_dictionary['res_ID'] = self.main_data['ID']
@@ -161,7 +161,7 @@ class data_collector():
         jobs = []
         i = 1
         while True:
-            if self.__check_presence(f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{i}]/div[1]/h4/a/span[1]'):
+            if self.check_presence(f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{i}]/div[1]/h4/a/span[1]'):
                 jobs.append(self.web_driver.find_element_by_xpath(f'//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[{self.control_number}]/div/div/div/section/div/div[{i}]/div[1]/h4/a/span[1]').text)
                 i += 1
             else:
@@ -202,7 +202,11 @@ class website_handler():
         self.driver = web_driver
         self.names = []
 
-    def __show_more_names(self):
+    def __click_button(self, xpath: str) -> None:
+        if data_collector(self.driver).check_presence(xpath): #checking presence of small button because it is not always there 
+            self.driver.find_element_by_xpath(xpath).click()
+
+    def __show_more_names(self): #
         options = Select(self.driver.find_element_by_id('inlineSelect'))
         options.select_by_visible_text('100')
         self.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/div/form/button').click()
@@ -210,12 +214,13 @@ class website_handler():
 
     def __load_current_name(self, current_index: int):
         script = f'''window.open("{self.names[current_index].get_attribute('href')}","_blank");'''
-        self.driver.execute_script(script)
-        self.driver.switch_to.window(self.driver.window_handles[-1])
-        input('roll site ')
-        document_handler('Male', self.driver).main_writer()
-        self.driver.close()
-        self.driver.switch_to.window(self.driver.window_handles[0])
+        self.driver.execute_script(script) #exectuing js script that opens new browser tab with spceified scientist's profile 
+        self.driver.switch_to.window(self.driver.window_handles[-1]) #switching to new tab
+        self.__click_button('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a') #clicking small button
+        self.__click_button('//*[@id="content"]/div/div[2]/div[1]/main/section/section/div/div/div/div/button') #clicking bigger button
+        document_handler('Male', self.driver).main_writer() #reading data from website and writing them to files 
+        self.driver.close() #closing new tab 
+        self.driver.switch_to.window(self.driver.window_handles[0]) #switching to main tab 
 
     def __read_new_names(self, beggining_number: int, num_to_add = 100) -> None:
         for i in range(beggining_number, beggining_number + num_to_add):
@@ -228,16 +233,25 @@ class website_handler():
         self.__load_current_name(0)
         self.__load_current_name(1)
 
+    def main_looper(self): #needs check 
+        self.__show_more_names()
+        self.__read_new_names(1, 110)
+        for i in range(stop):
+            if i % 100 != 0:
+                self.__load_current_name(i)
+            else:
+                self.__show_more_names()
+
 
 def main():
     dictionaries = []
     driver = webdriver.Chrome()
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=202533&_k=5py0p0')
-    # driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
+    driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=225261&_k=2m5mzl')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=25983&_k=488av6')
     # driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a').click()
-    driver.get('https://nauka-polska.pl/#/results?_k=uc5gg9')
+    # driver.get('https://nauka-polska.pl/#/results?_k=uc5gg9')
     start = input('start ')
     # data_collector(driver).switcher()
     # document_handler('Male', driver).main_writer()
