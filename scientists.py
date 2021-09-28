@@ -2,6 +2,7 @@ import re
 import pandas as pd
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support.ui import Select
 
 class colors:
     HEADER = '\033[95m'
@@ -196,22 +197,59 @@ class document_handler():
         func_df.to_csv(self.functions, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
         res_df.to_csv(self.research_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
 
+class website_handler():
+    def __init__(self, web_driver):
+        self.driver = web_driver
+        self.names = []
+
+    def __show_more_names(self):
+        options = Select(self.driver.find_element_by_id('inlineSelect'))
+        options.select_by_visible_text('100')
+        self.driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/div/form/button').click()
+        input('should be clicked ')
+
+    def __load_current_name(self, current_index: int):
+        script = f'''window.open("{self.names[current_index].get_attribute('href')}","_blank");'''
+        self.driver.execute_script(script)
+        self.driver.switch_to.window(self.driver.window_handles[-1])
+        input('roll site ')
+        document_handler('Male', self.driver).main_writer()
+        self.driver.close()
+        self.driver.switch_to.window(self.driver.window_handles[0])
+
+    def __read_new_names(self, beggining_number: int, num_to_add = 100) -> None:
+        for i in range(beggining_number, beggining_number + num_to_add):
+            element = self.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[{i}]/h2/a')
+            self.names.append(element)
+
+    def tester(self) -> None:
+        self.__show_more_names()
+        self.__read_new_names(1, 110)
+        self.__load_current_name(0)
+        self.__load_current_name(1)
 
 
 def main():
     dictionaries = []
     driver = webdriver.Chrome()
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=202533&_k=5py0p0')
-    driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
+    # driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=225261&_k=2m5mzl')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=25983&_k=488av6')
     # driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a').click()
+    driver.get('https://nauka-polska.pl/#/results?_k=uc5gg9')
     start = input('start ')
     # data_collector(driver).switcher()
-    document_handler('Male', driver).main_writer()
+    # document_handler('Male', driver).main_writer()
+    website_handler(driver).tester()
     driver.close()
 
 if __name__ == '__main__':
     main()
 
 
+# //*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[1]/h2
+# //*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[1]/h2/strong
+# //*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[27]/h2
+# //*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[96]/h2/a
+# //*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[100]/h2/a
