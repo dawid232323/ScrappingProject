@@ -1,8 +1,10 @@
 import re
 import pandas as pd
+import os.path as op
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
+from time import sleep
 
 class colors:
     HEADER = '\033[95m'
@@ -19,7 +21,9 @@ class data_collector():
     def __init__(self, driver):
         self.web_driver = driver
         self.main_data = {'ID': None, 'Imie': None, 'Nazwisko': None, 'Specjalności' : None, 'Klasyfikacja': None, 'Powiązane profile': None,
-        'Studia': None, 'Miejsce': None, 'Rok ukończenia': None}
+        'Studia': None, 'Miejsce': None, 'Rok ukończenia': None, 'Profesor_dziedzina': None, 'Profesor_data_nadania_tytułu': None, 'Habilitacja_dziedzina': None, 'Habilitacja_dyscyplina': None,
+        'Habilitacja_Data_uzyskania_stopnia': None, 'Habilitacja_Tytuł_pracy': None, 'Habilitacja_Instytucja': None, 'Doktorat_dziedzina': None, 'Doktorat_Dyscyplina': None, 'Doktorat_Specjalność': None,
+        'Doktorat_Data_uzyskania_stopnia': None, 'Doktorat_Tytuł_pracy': None, 'Doktorat_Instytucja': None}
         self.employment = []
         self.functions = []
         self.research = []
@@ -27,7 +31,7 @@ class data_collector():
 
     def check_presence(self, xpath: str, desired_text = 'default') -> bool:
         try:
-            elem = self.web_driver.find_element_by_xpath(xpath).text#.removeprefix(' ')
+            elem = self.web_driver.find_element_by_xpath(xpath).text
             if  elem == desired_text and desired_text != 'default':
                 return True
             elif desired_text == 'default':
@@ -100,7 +104,7 @@ class data_collector():
                     self.main_data[base_name + '_default'] = ready_key[0]
 
     def __employment_functions_collector(self, prefix:str) -> None: 
-        output_dictionary = {prefix + '_ID': None, prefix + '_Type': None, prefix + '_Position': None, prefix +'_Place': None}
+        output_dictionary = {prefix + '_ID': None, prefix + '_Type': None, prefix + '_Position': None, prefix +'_Place': None, prefix + '_PlaceID': None}
         temp = self.web_driver.find_elements_by_class_name('nnp-tab-item-title')
         positions = set()
         for item in temp:
@@ -121,19 +125,23 @@ class data_collector():
                 output_dictionary[prefix + '_Type'] = current_type
                 output_dictionary[prefix + '_Position'] = split_block[i]
                 output_dictionary[prefix +'_Place'] = split_block[i + 1]
+                output_dictionary[prefix + '_PlaceID'] = re.sub(r'[a-zA-Z\:\/\=\?\*\-\.\#]', '', self.web_driver.find_element_by_xpath(f'//*[contains(text(), "{output_dictionary[prefix + "_Place"]}")]').get_attribute('href')) #isolates institution ID from the href
+                print(output_dictionary[prefix + '_PlaceID'])
                 i += 1 
             else:
                 output_dictionary[prefix + '_ID'] = self.main_data['ID']
                 output_dictionary[prefix + '_Type'] = current_type
                 output_dictionary[prefix + '_Position'] = None
                 output_dictionary[prefix +'_Place'] = split_block[i]
+                output_dictionary[prefix + '_PlaceID'] = re.sub(r'[a-zA-Z\:\/\=\?\*\-\.\#]', '', self.web_driver.find_element_by_xpath(f'//*[contains(text(), "{output_dictionary[prefix + "_Place"]}")]').get_attribute('href')) #isolates institution ID from the href
+                print(output_dictionary[prefix + '_PlaceID'])
                 i += 1
             if output_dictionary[prefix +'_Place'] != None and output_dictionary[prefix + '_ID'] != None:
                 if prefix == 'emp':
                     self.employment.append(output_dictionary)
                 elif prefix == 'func':
                     self.functions.append(output_dictionary)    
-                output_dictionary = {prefix + '_ID': None, prefix + '_Type': None, prefix + '_Position': None, prefix +'_Place': None}
+                output_dictionary = {prefix + '_ID': None, prefix + '_Type': None, prefix + '_Position': None, prefix +'_Place': None, prefix + '_PlaceID': None}
         print(colors().OKGREEN, self.employment, colors().ENDC)
         print(colors().OKGREEN, self.functions, colors().ENDC)
 
@@ -186,16 +194,23 @@ class document_handler():
         self.functions = f'functions_{sex}_scientists.csv'
         self.driver = web_driver
 
+    def __write_single_file(self, name: str, data_frame) -> None:
+        if op.exists(name):
+            data_frame.to_csv(name, sep=';', header = False, index=False, encoding='UTF-8', mode='a')
+        else:
+            data_frame.to_csv(name, sep=';', header = True, index=False, encoding='UTF-8', mode='a')
+
+
     def main_writer(self) -> None:
         data = data_collector(self.driver).data_getter()
         main_df = pd.DataFrame(data[0])
         emp_df = pd.DataFrame(data[1])
         func_df = pd.DataFrame(data[2])
         res_df = pd.DataFrame(data[3])
-        main_df.to_csv(self.main_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
-        emp_df.to_csv(self.employment_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
-        func_df.to_csv(self.functions, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
-        res_df.to_csv(self.research_name, sep=';', header=True, index=False, encoding='UTF-8', mode='a')
+        self.__write_single_file(self.main_name, main_df)
+        self.__write_single_file(self.employment_name, emp_df)
+        self.__write_single_file(self.functions, func_df)
+        self.__write_single_file(self.research_name, res_df)
 
 class website_handler():
     def __init__(self, web_driver):
@@ -203,8 +218,9 @@ class website_handler():
         self.names = []
 
     def __click_button(self, xpath: str) -> None:
-        if data_collector(self.driver).check_presence(xpath): #checking presence of small button because it is not always there 
+        if data_collector(self.driver).check_presence(xpath): #checking presence of button
             self.driver.find_element_by_xpath(xpath).click()
+            print(colors().WARNING, 'button clicked', colors().ENDC)
 
     def __show_more_names(self): #
         options = Select(self.driver.find_element_by_id('inlineSelect'))
@@ -216,8 +232,14 @@ class website_handler():
         script = f'''window.open("{self.names[current_index].get_attribute('href')}","_blank");'''
         self.driver.execute_script(script) #exectuing js script that opens new browser tab with spceified scientist's profile 
         self.driver.switch_to.window(self.driver.window_handles[-1]) #switching to new tab
+        sleep(0.5)
         self.__click_button('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a') #clicking small button
-        self.__click_button('//*[@id="content"]/div/div[2]/div[1]/main/section/section/div/div/div/div/button') #clicking bigger button
+        try: 
+            self.__click_button('//*[@id="content"]/div/div[2]/div[1]/main/section/section/div/div/div/div/button') #clicking bigger button
+        except:
+            print(colors().FAIL, 'entering exception', colors().ENDC)
+            self.driver.find_element_by_class_name('btn-primary nnp-collapsed-button btn btn-lg btn-default').click()
+        sleep(0.5)
         document_handler('Male', self.driver).main_writer() #reading data from website and writing them to files 
         self.driver.close() #closing new tab 
         self.driver.switch_to.window(self.driver.window_handles[0]) #switching to main tab 
@@ -227,35 +249,56 @@ class website_handler():
             element = self.driver.find_element_by_xpath(f'//*[@id="content"]/div/div[2]/div[1]/main/section/div/div[2]/div/section/div[2]/div[2]/ul/li[{i}]/h2/a')
             self.names.append(element)
 
+    def __start_sequence(self):
+        self.names[0].click()
+        self.driver.back()
+
     def tester(self) -> None:
         self.__show_more_names()
-        self.__read_new_names(1, 110)
-        self.__load_current_name(0)
-        self.__load_current_name(1)
+        input('enter first name and then go back ')
+        self.__read_new_names(1, 100)
+        # self.__load_current_name(0)
+        # self.__load_current_name(1)
+        for i in range(len(self.names)):
+            print(i, '. ', self.names[i].text)
 
     def main_looper(self): #needs check 
         self.__show_more_names()
-        self.__read_new_names(1, 110)
-        for i in range(stop):
-            if i % 100 != 0:
-                self.__load_current_name(i)
+        input('enter first name and then go back ')
+        self.__read_new_names(1, 100)
+        print(colors().WARNING, f'len of names is {len(self.names)}', colors().ENDC)
+        for i in range(len(self.names)):
+            if i % 99 != 0 or i == 0:
+                try:
+                    self.__load_current_name(i)
+                except NoSuchElementException:
+                    print(colors().FAIL, 'exception occured, continue? (y/n)', colors().ENDC)
+                    response = input()
+                    if response == 'y':
+                        self.__load_current_name(i)
+                    elif response == 'n':
+                        break
             else:
+                print(colors().WARNING, f'i is {i}', colors().ENDC)
                 self.__show_more_names()
+                self.__read_new_names(i, i + 100)
 
 
 def main():
     dictionaries = []
     driver = webdriver.Chrome()
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=202533&_k=5py0p0')
-    driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
+    # driver.get('https://nauka-polska.pl/#/profile/scientist?id=27951&_k=iid8du')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=225261&_k=2m5mzl')
     # driver.get('https://nauka-polska.pl/#/profile/scientist?id=25983&_k=488av6')
     # driver.find_element_by_xpath('//*[@id="content"]/div/div[2]/div[1]/main/section/section/section[2]/div/div/div/section/div/div[3]/a').click()
     # driver.get('https://nauka-polska.pl/#/results?_k=uc5gg9')
+    driver.get('https://nauka-polska.pl/#/results?_k=iqbuno') # main page 
     start = input('start ')
     # data_collector(driver).switcher()
     # document_handler('Male', driver).main_writer()
-    website_handler(driver).tester()
+    website_handler(driver).main_looper()
+
     driver.close()
 
 if __name__ == '__main__':
