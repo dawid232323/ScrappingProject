@@ -5,6 +5,8 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.ui import Select
 from time import sleep
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 
 class colors:
     HEADER = '\033[95m'
@@ -283,6 +285,17 @@ class website_handler():
                 self.__show_more_names()
                 self.__read_new_names(i, i + 100)
 
+    def insert_text(self, value: str) -> None:
+        script_text = f'''document.getElementsByClassName("form-control")[1].value="{value}";'''
+        try:
+            self.driver.execute_script(script_text)
+            self.driver.execute_script('''document.getElementsByClassName("btn-primary")[1].click();''')
+            input('waiting')
+        except Exception as e:
+            print('fail', e)
+            return
+        # ActionChains(self.driver).move_to_element(text_field).send_keys(value).perform()
+        
 
 def main():
     dictionaries = []
@@ -297,7 +310,8 @@ def main():
     start = input('start ')
     # data_collector(driver).switcher()
     # document_handler('Male', driver).main_writer()
-    website_handler(driver).main_looper()
+    # website_handler(driver).main_looper()
+    website_handler(driver).insert_text('Konrad Pylak')
 
     driver.close()
 
