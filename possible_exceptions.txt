@@ -1,4 +1,0 @@
-selenium.common.exceptions.UnexpectedAlertPresentException: Alert Text: Wystąpił błąd (L1746)
-Prosimy o zgłoszenie na adres regon_bir@stat.gov.pl z numerem REGON/NIP/KRS dla którego błąd się pojawił.
-UserAgent:
-Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36
